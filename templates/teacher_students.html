@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Журнал успеваемости - Образовательная платформа</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #e0e7ff;
+            --primary-lighter: #f5f7ff;
+            --primary-dark: #3a56d4;
+            --secondary: #7b2cbf;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+            --lighter: #ffffff;
+            --gray: #94a3b8;
+            --gray-light: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-lighter), var(--lighter));
+            color: var(--dark);
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .bubbles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -150px;
+            background: radial-gradient(circle at center,
+                      rgba(123, 44, 191, 0.15) 0%,
+                      rgba(67, 97, 238, 0.1) 50%,
+                      transparent 70%);
+            border-radius: 50%;
+            animation: rise 15s infinite ease-in;
+            filter: blur(1.5px);
+            opacity: 0.8;
+            mix-blend-mode: overlay;
+        }
+
+        .bubble:nth-child(odd) {
+            background: radial-gradient(circle at center,
+                      rgba(67, 97, 238, 0.15) 0%,
+                      rgba(123, 44, 191, 0.1) 50%,
+                      transparent 70%);
+        }
+
+        @keyframes rise {
+            0% {
+                bottom: -150px;
+                transform: translateX(0) scale(0.8);
+                opacity: 0;
+            }
+            20% {
+                opacity: 0.8;
+            }
+            50% {
+                transform: translateX(100px) scale(1);
+            }
+            80% {
+                opacity: 0.6;
+            }
+            100% {
+                bottom: 120vh;
+                transform: translateX(-150px) scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(224, 231, 255, 0.6);
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: var(--darker);
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            letter-spacing: -0.5px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.85rem 2rem;
+            border-radius: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.25);
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(67, 97, 238, 0.35);
+        }
+
+        .btn-outline-primary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248, 250, 252, 0.98));
+            border-radius: 1.25rem;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(224, 231, 255, 0.8);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-weight: 500;
+        }
+
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .student-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248, 250, 252, 0.98));
+            border-radius: 1.25rem;
+            padding: 2rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            border: 1px solid rgba(224, 231, 255, 0.8);
+            backdrop-filter: blur(6px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .student-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            transition: width 0.3s ease;
+        }
+
+        .student-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .student-card:hover::before {
+            width: 6px;
+        }
+
+        .student-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .student-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--darker);
+            flex: 1;
+        }
+
+        .student-level {
+            padding: 0.4rem 1.2rem;
+            border-radius: 9999px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary-light), rgba(224, 231, 255, 0.8));
+            color: var(--primary-dark);
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.15);
+        }
+
+        .student-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .student-stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-title {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .student-progress {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .student-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .add-student-form {
+            background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248, 250, 252, 0.95));
+            border-radius: 1.5rem;
+            padding: 3rem;
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(224, 231, 255, 0.8);
+        }
+
+        .form-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 2.5rem;
+            color: var(--darker);
+            text-align: center;
+            position: relative;
+        }
+
+        .form-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--darker);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--gray-light);
+            border-radius: 0.85rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+            background-color: white;
+        }
+
+        /* Стили для сообщений flash */
+        .flash-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .flash-message {
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease-out;
+            max-width: 350px;
+            backdrop-filter: blur(10px);
+        }
+
+        .flash-success {
+            background: linear-gradient(135deg, var(--success), #0da271);
+        }
+
+        .flash-error {
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .students-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .add-student-form {
+                padding: 2rem 1.5rem;
+            }
+
+            .form-title {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Пузырьки с плавными градиентами -->
+    <div class="bubbles">
+        <div class="bubble" style="left: 10%; width: 80px; height: 80px; animation-delay: 0s;"></div>
+        <div class="bubble" style="left: 20%; width: 120px; height: 120px; animation-delay: 2s;"></div>
+        <div class="bubble" style="left: 50%; width: 100px; height: 100px; animation-delay: 4s;"></div>
+        <div class="bubble" style="left: 70%; width: 90px; height: 90px; animation-delay: 6s;"></div>
+        <div class="bubble" style="left: 30%; width: 110px; height: 110px; animation-delay: 8s;"></div>
+        <div class="bubble" style="left: 80%; width: 70px; height: 70px; animation-delay: 10s;"></div>
+    </div>
+
+    <!-- Контейнер для flash-сообщений -->
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Журнал успеваемости</h1>
+            <div>
+                <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-home me-2"></i>Главная
+                </a>
+                <a href="{{ url_for('logout') }}" class="btn btn-primary">
+                    <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                </a>
+            </div>
+        </header>
+
+        <!-- Статистика -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ students|length }}</div>
+                <div class="stat-label">Всего учеников</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_stars }}</div>
+                <div class="stat-label">Всего звёзд</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ active_students }}</div>
+                <div class="stat-label">Активных</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ tests_completed }}</div>
+                <div class="stat-label">Пройдено тестов</div>
+            </div>
+        </div>
+
+        <!-- Список учеников -->
+        <h2 style="margin-bottom: 2rem; color: var(--darker);">Мои ученики</h2>
+        <div class="students-grid">
+            {% for student in students %}
+            <div class="student-card" onclick="window.location.href='{{ url_for('student_details', student_id=student.id) }}'">
+                <div class="student-header">
+                    <h3 class="student-name">{{ student.full_name or student.username }}</h3>
+                    <span class="student-level">{{ student.current_rank }}</span>
+                </div>
+
+                <div class="student-stats">
+                    <div class="student-stat">
+                        <div class="stat-value">{{ student.stars }}</div>
+                        <div class="stat-title">Звёзды</div>
+                    </div>
+                    <div class="student-stat">
+                        <div class="stat-value">{{ student.tests_completed or 0 }}</div>
+                        <div class="stat-title">Тесты</div>
+                    </div>
+                </div>
+
+                <div class="student-progress">
+                    <div class="progress-text">
+                        <span>Прогресс</span>
+                        <span>{{ (student.stars % 15) }}/15</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ (student.stars % 15) * 6.67 }}%;"></div>
+                    </div>
+                </div>
+
+                <div class="student-actions">
+                    <button class="btn btn-outline-primary btn-sm"
+                            onclick="event.stopPropagation(); window.location.href='{{ url_for('student_details', student_id=student.id) }}'">
+                        <i class="fas fa-eye me-1"></i>Подробнее
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm"
+                            onclick="event.stopPropagation(); confirmDelete({{ student.id }}, '{{ student.username }}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h4>Пока нет учеников</h4>
+                    <p class="text-muted">Добавьте первого ученика, чтобы начать работу</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Форма добавления ученика -->
+        <div class="add-student-form">
+            <h3 class="form-title">Добавить нового ученика</h3>
+            <form method="POST" action="{{ url_for('add_student') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="form-group">
+                    <label for="username" class="form-label">Логин ученика *</label>
+                    <input type="text" id="username" name="username" class="form-input" required
+                           placeholder="Придумайте логин для входа" minlength="3">
+                </div>
+
+                <div class="form-group">
+                    <label for="full_name" class="form-label">Полное имя ученика *</label>
+                    <input type="text" id="full_name" name="full_name" class="form-input" required
+                           placeholder="Имя и фамилия ученика">
+                </div>
+
+                <div class="form-group">
+                    <label for="start_date" class="form-label">Дата начала занятий *</label>
+                    <input type="date" id="start_date" name="start_date" class="form-input" required
+                           value="{{ now_date }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="initial_level" class="form-label">Начальный уровень *</label>
+                    <select id="initial_level" name="initial_level" class="form-input" required>
+                        <option value="">Выберите уровень</option>
+                        <option value="Начинающий">Начинающий (A1)</option>
+                        <option value="Элементарный">Элементарный (A2)</option>
+                        <option value="Средний">Средний (B1)</option>
+                        <option value="Выше среднего">Выше среднего (B2)</option>
+                        <option value="Продвинутый">Продвинутый (C1)</option>
+                        <option value="Профессиональный">Профессиональный (C2)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="goal" class="form-label">Цель обучения *</label>
+                    <select id="goal" name="goal" class="form-input" required>
+                        <option value="">Выберите цель</option>
+                        <option value="Общее развитие">Общее развитие</option>
+                        <option value="Подготовка к экзамену">Подготовка к экзамену</option>
+                        <option value="Работа">Для работы</option>
+                        <option value="Путешествия">Для путешествий</option>
+                        <option value="Учеба">Для учебы</option>
+                        <option value="Хобби">Для хобби</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.1rem;">
+                    <i class="fas fa-plus me-2"></i>Добавить ученика
+                </button>
+
+                <div class="mt-3 text-center">
+                    <small class="text-muted">
+                        * Поля, обязательные для заполнения. Пароль будет сгенерирован автоматически.
+                    </small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Автоматическое скрытие flash-сообщений через 5 секунд
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(message => {
+                setTimeout(() => {
+                    message.style.transition = 'opacity 0.5s ease';
+                    message.style.opacity = '0';
+                    setTimeout(() => message.remove(), 500);
+                }, 5000);
+            });
+        });
+
+        function confirmDelete(studentId, username) {
+            if (confirm(`Вы уверены, что хотите удалить ученика "${username}"? Все его данные будут потеряны.`)) {
+                fetch(`{{ url_for('delete_student', student_id=0) }}`.replace('0', studentId), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Ученик успешно удалён');
+                        location.reload();
+                    } else {
+                        alert('Ошибка при удалении: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Ошибка при удалении');
+                    console.error('Error:', error);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

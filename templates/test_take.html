@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прохождение теста - {{ test.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7b2cbf;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7ff, #e0e7ff);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .test-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            flex-grow: 1;
+            margin: 0 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .question-container {
+            margin-bottom: 2rem;
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #1e293b;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            transform: translateY(-2px);
+        }
+
+        .results-container {
+            text-align: center;
+        }
+
+        .result-percentage {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 1rem 0;
+        }
+
+        .stars-earned {
+            font-size: 1.5rem;
+            color: #f59e0b;
+            margin-bottom: 2rem;
+        }
+
+        .result-details {
+            text-align: left;
+            margin-top: 2rem;
+        }
+
+        .result-item {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+        }
+
+        .result-correct {
+            background: #f0fdf4;
+            border-left-color: #10b981;
+        }
+
+        .result-incorrect {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+
+        .achievement-message {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border: 2px solid #f59e0b;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        {% if not result %}
+        <!-- Прохождение теста -->
+        <div class="test-header">
+            <h1 class="test-title">{{ test.title }}</h1>
+            <div class="progress-info">
+                <span>Вопрос {{ current_question + 1 }} из {{ total_questions }}</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ ((current_question + 1) / total_questions) * 100 }}%;"></div>
+                </div>
+                <span>{{ ((current_question + 1) / total_questions * 100)|round }}%</span>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('process_test_answer', test_id=test.id, student_id=student_id, question_index=current_question) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="question-container">
+                <h2 class="question-text">Вопрос {{ current_question + 1 }}: {{ questions[current_question].question }}</h2>
+                <input type="text" name="answer" class="answer-input" placeholder="Введите ваш ответ" required
+                       value="{{ user_answers[current_question] if user_answers and user_answers[current_question] else '' }}">
+            </div>
+
+            <div class="navigation-buttons">
+                {% if current_question > 0 %}
+                <a href="{{ url_for('take_test', test_id=test.id, student_id=student_id, question_index=current_question-1) }}"
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Назад
+                </a>
+                {% else %}
+                <div></div>
+                {% endif %}
+
+                {% if current_question < total_questions - 1 %}
+                <button type="submit" class="btn btn-primary">
+                    Далее <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+                {% else %}
+                <button type="submit" name="finish" value="true" class="btn btn-success">
+                    Завершить тест <i class="fas fa-check ms-2"></i>
+                </button>
+                {% endif %}
+            </div>
+        </form>
+
+        {% else %}
+        <!-- Результаты теста -->
+        <div class="results-container">
+            <div class="test-header">
+                <h1 class="test-title">Результаты теста</h1>
+                <h3>{{ test.title }}</h3>
+            </div>
+
+            {% for message in achievement_messages %}
+            <div class="achievement-message">
+                <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
+                <h4 class="text-warning">Достижение разблокировано!</h4>
+                <p class="mb-0">{{ message }}</p>
+            </div>
+            {% endfor %}
+
+            <div class="result-percentage">{{ result.percentage }}%</div>
+            <div class="stars-earned">
+                <i class="fas fa-star text-warning"></i> Получено звёзд: {{ result.stars_earned }}
+            </div>
+
+            <div class="result-details">
+                <h4>Детализация результатов:</h4>
+                {% for answer in answers %}
+                <div class="result-item {% if answer.is_correct %}result-correct{% else %}result-incorrect{% endif %}">
+                    <h5>Вопрос {{ loop.index }}: {{ answer.question }}</h5>
+                    <p><strong>Ваш ответ:</strong> {{ answer.user_answer }}</p>
+                    <p><strong>Правильный ответ:</strong> {{ answer.correct_answer }}</p>
+                    <p><strong>Статус:</strong>
+                        {% if answer.is_correct %}
+                        <span class="text-success">Правильно ✓</span>
+                        {% else %}
+                        <span class="text-danger">Неправильно ✗</span>
+                        {% endif %}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4">
+                <a href="{{ url_for('student_dashboard', student_id=student_id) }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Вернуться к профилю
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

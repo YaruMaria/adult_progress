@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная - Образовательная платформа</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #e0e7ff;
+            --primary-dark: #3a56d4;
+            --dark: #1e293b;
+            --light: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--light);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+        }
+
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .student-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .student-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .student-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .add-student-card {
+            background: var(--primary-light);
+            border: 2px dashed var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-decoration: none;
+            color: var(--primary-dark);
+        }
+
+        .add-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Добро пожаловать, {{ session.username }}!</h1>
+            <p>Выберите ученика для работы или добавьте нового</p>
+        </header>
+
+        <div class="students-grid">
+            {% for student in students %}
+            <div class="student-card" onclick="window.location.href='{{ url_for('student_dashboard', student_id=student.id) }}'">
+                <h3 class="student-name">{{ student.full_name }}</h3>
+                <p>Логин: {{ student.username }}</p>
+                <p>Начал: {{ student.start_date }}</p>
+                <p>Уровень: {{ student.initial_level }}</p>
+            </div>
+            {% endfor %}
+
+            <a href="{{ url_for('teacher_students') }}" class="student-card add-student-card">
+                <div class="add-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <h3>Добавить ученика</h3>
+            </a>
+        </div>
+
+        {% if not students %}
+        <div class="empty-state">
+            <h3>У вас пока нет учеников</h3>
+            <p>Добавьте первого ученика, чтобы начать работу</p>
+            <a href="{{ url_for('teacher_students') }}" style="color: var(--primary);">Добавить ученика</a>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

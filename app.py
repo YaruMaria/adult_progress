@@ -1,56 +1,36 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+from datetime import datetime
 import sqlite3
 import os
-from functools import wraps
-from flask_wtf.csrf import CSRFProtect
 import json
+from functools import wraps
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 app.config['SESSION_PERMANENT'] = False
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
-app.config['WTF_CSRF_ENABLED'] = True
 
-# Инициализация CSRF защиты
+# Добавьте CSRF защиту
 csrf = CSRFProtect(app)
 
+@app.context_processor
+def utility_processor():
+    return dict(datetime=datetime)
 # Конфигурация базы данных
-DB_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "school.db")
+DB_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "education.db")
 
-# Константы для системы мастерской
-WORKSHOP_LEVELS = {
-    1: {"name": "Начинающий кузнец", "tools": ["молоток", "наковальня"], "max_quality": 60},
-    2: {"name": "Подмастерье", "tools": ["тиски", "зубило"], "max_quality": 75},
-    3: {"name": "Мастер", "tools": ["горн", "пресс"], "max_quality": 90},
-    4: {"name": "Великий мастер", "tools": ["станок", "микрометр"], "max_quality": 100}
+# Система достижений
+# Система достижений (добавьте в начало файла)
+ACHIEVEMENTS = {
+    1: {"name": "Новичок", "stars_required": 1, "message": "Поздравляем! Вы получили первую звезду и теперь Новичок!"},
+    5: {"name": "Ученик", "stars_required": 5, "message": "Отлично! Вы достигли уровня Ученика!"},
+    15: {"name": "Знаток", "stars_required": 15, "message": "Поздравляем! Теперь вы Знаток!"},
+    30: {"name": "Эксперт", "stars_required": 30, "message": "Великолепно! Вы достигли уровня Эксперта!"},
+    50: {"name": "Мастер", "stars_required": 50, "message": "Потрясающе! Вы настоящий Мастер обучения!"},
+    100: {"name": "Гуру", "stars_required": 100, "message": "Невероятно! Вы достигли высшего уровня - Гуру!"}
 }
 
-RESOURCE_VALUES = {
-    'understanding': {'coal': 2, 'iron': 1},
-    'participation': {'coal': 1, 'iron': 2},
-    'homework': {'coal': 3, 'steel': 1}
-}
-
-SHOP_ITEMS = [
-    {"id": 1, "name": "Улучшенный молоток", "type": "tool", "price": 50, "effect": "+10% к качеству"},
-    {"id": 2, "name": "Тисочный станок", "type": "tool", "price": 100, "effect": "+15% к скорости"},
-    {"id": 3, "name": "Набор резцов", "type": "tool", "price": 80, "effect": "+5 к деталям"},
-    {"id": 4, "name": "Кованый подсвечник", "type": "decoration", "price": 45, "effect": "украшение"},
-    {"id": 5, "name": "Чертеж часов", "type": "blueprint", "price": 150, "effect": "новый проект"},
-    {"id": 6, "name": "Обсидиановая накладка", "type": "material", "price": 200, "effect": "редкий материал"}
-]
-
-def get_db():
-    """Устанавливает соединение с базой данных"""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-# Конфигурация базы данных
-DB_PATH = os.path.join(os.path.abspath(os.path.dirname(__file__)), "school.db")
 
 def get_db():
     """Устанавливает соединение с базой данных"""
@@ -75,69 +55,53 @@ def init_db():
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE NOT NULL,
                     password TEXT NOT NULL,
-                    role TEXT NOT NULL CHECK(role IN ('teacher', 'parent', 'admin')),
-                    is_teacher BOOLEAN DEFAULT 0
+                    role TEXT NOT NULL CHECK(role IN ('student', 'teacher', 'admin')),
+                    stars INTEGER DEFAULT 0,
+                    achievements TEXT DEFAULT '[]',
+                    current_rank TEXT DEFAULT 'Нет статуса'
                 );
 
-                CREATE TABLE students (
+                CREATE TABLE tests (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    level TEXT,
-                    start_date TEXT,
-                    goal TEXT,
-                    teacher_id INTEGER,
-                    workshop_level INTEGER DEFAULT 1,
-                    resources TEXT DEFAULT '{"coal": 0, "iron": 0, "steel": 0, "quality_gems": 0}',
-                    current_project TEXT DEFAULT 'Простые инструменты',
-                    FOREIGN KEY (teacher_id) REFERENCES users(id)
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    creator_id INTEGER NOT NULL,
+                    questions TEXT NOT NULL,
+                    created_date TEXT NOT NULL,
+                    updated_date TEXT,
+                    FOREIGN KEY (creator_id) REFERENCES users(id)
                 );
 
-                CREATE TABLE lessons (
+                CREATE TABLE test_results (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    test_id INTEGER NOT NULL,
+                    student_id INTEGER NOT NULL,
+                    score INTEGER NOT NULL,
+                    total_questions INTEGER NOT NULL,
+                    percentage INTEGER NOT NULL,
+                    stars_earned INTEGER NOT NULL,
+                    answers TEXT NOT NULL,
+                    completed_date TEXT NOT NULL,
+                    FOREIGN KEY (test_id) REFERENCES tests(id),
+                    FOREIGN KEY (student_id) REFERENCES users(id)
+                );
+
+                CREATE TABLE student_achievements (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id INTEGER NOT NULL,
-                    date TEXT NOT NULL,
-                    topic TEXT NOT NULL,
-                    understanding INTEGER DEFAULT 0,
-                    participation INTEGER DEFAULT 0,
-                    homework TEXT,
-                    quality_score INTEGER DEFAULT 0,
-                    resources_earned TEXT DEFAULT '{}',
-                    FOREIGN KEY (student_id) REFERENCES students(id)
-                );
-
-                CREATE TABLE monthly_awards (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    student_id INTEGER NOT NULL,
-                    year INTEGER NOT NULL,
-                    month INTEGER NOT NULL,
-                    award INTEGER,
-                    project_completed TEXT,
-                    FOREIGN KEY (student_id) REFERENCES students(id),
-                    UNIQUE(student_id, year, month)
-                );
-
-                CREATE TABLE parents (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    student_id INTEGER NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users(id),
-                    FOREIGN KEY (student_id) REFERENCES students(id),
-                    UNIQUE(user_id, student_id)
-                );
-
-                CREATE TABLE workshop_items (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    student_id INTEGER NOT NULL,
-                    item_id INTEGER NOT NULL,
-                    purchased_date TEXT NOT NULL,
-                    is_equipped BOOLEAN DEFAULT 0,
-                    FOREIGN KEY (student_id) REFERENCES students(id)
+                    achievement_id INTEGER NOT NULL,
+                    achieved_date TEXT NOT NULL,
+                    FOREIGN KEY (student_id) REFERENCES users(id)
                 );
             """)
             conn.commit()
             print("Таблицы успешно созданы")
         else:
             print("Таблицы уже существуют")
+
+        # Обновляем структуру базы данных
+        update_db_schema()
+
     except sqlite3.Error as e:
         print(f"Ошибка при инициализации базы данных: {e}")
         raise
@@ -145,53 +109,27 @@ def init_db():
         conn.close()
 
 
-def calculate_workshop_resources(understanding, participation, homework):
-    """Рассчитывает ресурсы, полученные за урок"""
-    resources = {'coal': 0, 'iron': 0, 'steel': 0, 'quality_gems': 0}
+@app.context_processor
+def inject_csrf_token():
+    return dict(csrf_token=generate_csrf)
 
-    # За понимание - уголь и железо
-    resources['coal'] += understanding * RESOURCE_VALUES['understanding']['coal']
-    resources['iron'] += understanding * RESOURCE_VALUES['understanding']['iron']
-
-    # За участие - уголь и железо
-    resources['coal'] += participation * RESOURCE_VALUES['participation']['coal']
-    resources['iron'] += participation * RESOURCE_VALUES['participation']['iron']
-
-    # За домашнюю работу - уголь и сталь
-    homework_value = int(homework) if homework.isdigit() else 0
-    resources['coal'] += homework_value * RESOURCE_VALUES['homework']['coal']
-    if homework_value >= 3:  # Только за качественную работу
-        resources['steel'] += homework_value * RESOURCE_VALUES['homework']['steel']
-
-    # Качество детали (шанс получить самоцветы)
-    quality_score = (understanding * 20 + participation * 15 + homework_value * 10) // 3
-    if quality_score >= 90:
-        resources['quality_gems'] = 1
-
-    return resources, quality_score
-
-
-def get_workshop_level_data(level):
-    """Возвращает данные о уровне мастерской"""
-    return WORKSHOP_LEVELS.get(level, WORKSHOP_LEVELS[1])
-
-def create_first_teacher():
+def create_first_admin():
     """Создает учетную запись администратора по умолчанию"""
     try:
         conn = get_db()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT * FROM users WHERE is_teacher = 1")
+        cursor.execute("SELECT * FROM users WHERE role = 'admin'")
         if not cursor.fetchone():
             hashed_password = generate_password_hash("admin123")
             cursor.execute(
-                "INSERT INTO users (username, password, role, is_teacher) VALUES (?, ?, ?, ?)",
-                ("admin", hashed_password, "admin", 1)
+                "INSERT INTO users (username, password, role, current_rank) VALUES (?, ?, ?, ?)",
+                ("admin", hashed_password, "admin", "Администратор")
             )
             conn.commit()
-            print("Создан учитель по умолчанию: admin/admin123")
+            print("Создан администратор по умолчанию: admin/admin123")
     except sqlite3.Error as e:
-        print(f"Ошибка при создании учителя: {e}")
+        print(f"Ошибка при создании администратора: {e}")
         raise
     finally:
         conn.close()
@@ -205,22 +143,37 @@ def login_required(f):
             flash('Пожалуйста, войдите для доступа к этой странице', 'error')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
+
     return decorated_function
+
 
 def teacher_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('is_teacher'):
+        if session.get('role') != 'teacher' and session.get('role') != 'admin':
             flash('Эта функция доступна только учителям', 'error')
             return redirect(url_for('home'))
         return f(*args, **kwargs)
+
     return decorated_function
+
+
+def student_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('role') != 'student':
+            flash('Эта функция доступна только ученикам', 'error')
+            return redirect(url_for('home'))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
 
 # Маршруты аутентификации
 @app.route('/')
 def index():
-    """Перенаправляет на вход, даже если пользователь был авторизован ранее"""
     return redirect(url_for('login'))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -232,7 +185,7 @@ def login():
             with get_db() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT id, username, password, is_teacher, role FROM users WHERE username = ?',
+                    'SELECT id, username, password, role, stars, current_rank FROM users WHERE username = ?',
                     (username,)
                 )
                 user = cursor.fetchone()
@@ -240,10 +193,16 @@ def login():
             if user and check_password_hash(user['password'], password):
                 session['user_id'] = user['id']
                 session['username'] = user['username']
-                session['is_teacher'] = bool(user['is_teacher'])
-                session['is_parent'] = user['role'] == 'parent'
+                session['role'] = user['role']
+                session['stars'] = user['stars']
+                session['current_rank'] = user['current_rank']
+
                 flash('Вы успешно вошли в систему', 'success')
-                return redirect(url_for('home'))
+
+                if user['role'] == 'student':
+                    return redirect(url_for('student_dashboard'))
+                else:
+                    return redirect(url_for('teacher_dashboard'))
 
             flash('Неверный логин или пароль', 'error')
         except Exception as e:
@@ -252,6 +211,29 @@ def login():
 
     return render_template('login.html')
 
+
+def update_db_schema():
+    """Обновляет структуру базы данных, добавляя новые столбцы"""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # Проверяем существование столбца student_id в таблице tests
+        cursor.execute("PRAGMA table_info(tests)")
+        columns = [column[1] for column in cursor.fetchall()]
+
+        if 'student_id' not in columns:
+            cursor.execute("ALTER TABLE tests ADD COLUMN student_id INTEGER")
+            print("Добавлен столбец student_id в tests")
+            conn.commit()
+
+        conn.close()
+
+    except sqlite3.Error as e:
+        print(f"Ошибка при обновлении структуры базы данных: {e}")
+        raise
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -259,7 +241,7 @@ def register():
             username = request.form.get('username', '').strip()
             password = request.form.get('password', '').strip()
             confirm_password = request.form.get('confirm_password', '').strip()
-            role = request.form.get('role', 'parent')
+            role = request.form.get('role', 'student')
 
             # Валидация
             errors = []
@@ -269,7 +251,7 @@ def register():
                 errors.append('Пароль должен содержать минимум 6 символов')
             if password != confirm_password:
                 errors.append('Пароли не совпадают')
-            if role not in ['teacher', 'parent']:
+            if role not in ['student', 'teacher']:
                 errors.append('Необходимо выбрать роль')
 
             if errors:
@@ -281,8 +263,8 @@ def register():
             with get_db() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'INSERT INTO users (username, password, role, is_teacher) VALUES (?, ?, ?, ?)',
-                    (username, hashed_password, role, 1 if role == 'teacher' else 0)
+                    'INSERT INTO users (username, password, role, current_rank) VALUES (?, ?, ?, ?)',
+                    (username, hashed_password, role, 'Новичок' if role == 'student' else 'Учитель')
                 )
                 conn.commit()
 
@@ -297,114 +279,6 @@ def register():
 
     return render_template('register.html')
 
-@app.route('/find_student', methods=['GET', 'POST'])
-@login_required
-def find_student():
-    if not session.get('is_parent'):
-        return redirect(url_for('home'))
-
-    search_name = request.form.get('student_name', '').strip()
-    students = []
-
-    try:
-        if search_name:
-            conn = get_db()
-            cursor = conn.cursor()
-
-            # Ищем по имени или фамилии (если введены оба слова)
-            search_terms = search_name.split()
-            query = """
-                SELECT s.id, s.name, s.level, s.start_date, s.goal, 
-                       u.username as teacher_name 
-                FROM students s
-                LEFT JOIN users u ON s.teacher_id = u.id
-                WHERE {}
-                ORDER BY s.name
-            """.format(
-                " AND ".join(["s.name LIKE ?" for _ in search_terms])
-            )
-
-            params = [f'%{term}%' for term in search_terms]
-            cursor.execute(query, params)
-            students = cursor.fetchall()
-
-            # Логирование для отладки
-            app.logger.debug(f"Search for '{search_name}' returned {len(students)} results")
-            if students:
-                app.logger.debug(f"Found students: {[s['name'] for s in students]}")
-
-    except Exception as e:
-        app.logger.error(f"Search error: {str(e)}")
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'error': str(e)}), 500
-
-    # AJAX-запрос
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        if 'error' in locals():
-            return jsonify({'error': 'Ошибка при поиске'}), 500
-        html = render_template('_student_results.html',
-                               students=students,
-                               search_name=search_name)
-        return jsonify({'html': html})
-
-    return render_template('find_student.html',
-                           students=students,
-                           search_name=search_name)
-
-@app.route('/link_student/<int:student_id>')
-@login_required
-def link_student(student_id):
-    if not session.get('is_parent'):
-        return redirect(url_for('home'))
-
-    try:
-        conn = get_db()
-        cursor = conn.cursor()
-
-        # Проверяем, что студент существует
-        cursor.execute("SELECT id FROM students WHERE id = ?", (student_id,))
-        if not cursor.fetchone():
-            flash('Ученик не найден', 'error')
-            return redirect(url_for('find_student'))
-
-        # Связываем родителя с учеником
-        cursor.execute(
-            "INSERT OR IGNORE INTO parents (user_id, student_id) VALUES (?, ?)",
-            (session['user_id'], student_id)
-        )
-        conn.commit()
-        flash('Ученик успешно привязан к вашему аккаунту', 'success')
-
-    except Exception as e:
-        conn.rollback()
-        flash('Произошла ошибка при привязке ученика', 'error')
-        print(f"Ошибка привязки ученика: {e}")
-    finally:
-        conn.close()
-
-    return redirect(url_for('parent_dashboard'))
-
-@app.route('/parent_dashboard')
-@login_required
-def parent_dashboard():
-    if not session.get('is_parent'):
-        return redirect(url_for('home'))
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-    # Получаем всех привязанных учеников
-    cursor.execute("""
-        SELECT s.id, s.name, s.level 
-        FROM students s
-        JOIN parents p ON s.id = p.student_id
-        WHERE p.user_id = ?
-    """, (session['user_id'],))
-    students = cursor.fetchall()
-
-    conn.close()
-
-    return render_template('parent_dashboard.html', students=students)
 
 @app.route('/logout')
 def logout():
@@ -412,583 +286,828 @@ def logout():
     flash('Вы успешно вышли из системы', 'success')
     return redirect(url_for('login'))
 
+
 # Основные маршруты
 @app.route("/home")
 @login_required
 def home():
-    """Страница 'Мои ученики'"""
-    if session.get('is_parent'):
-        return redirect(url_for('parent_dashboard'))
-
-    conn = sqlite3.connect("school.db")
-    cursor = conn.cursor()
-
-    if session.get('is_teacher'):
-        cursor.execute("SELECT * FROM students WHERE teacher_id = ?", (session['user_id'],))
+    if session.get('role') == 'student':
+        return redirect(url_for('student_dashboard'))
     else:
-        cursor.execute("SELECT * FROM students LIMIT 0")
-
-    students = cursor.fetchall()
-    conn.close()
-    return render_template("index.html", students=students)
+        return redirect(url_for('teacher_dashboard'))
 
 
-@app.route("/student/<int:student_id>")
+
+
+@app.route("/teacher/dashboard")
 @login_required
-def student(student_id):
-    """Страница ученика с системой мастерской"""
+@teacher_required
+def teacher_dashboard():
+    """Главная страница учителя с выбором ученика"""
     conn = get_db()
     cursor = conn.cursor()
 
     try:
-        # Проверяем права доступа
-        if session.get('is_teacher'):
+        # Проверяем существование столбцов
+        cursor.execute("PRAGMA table_info(users)")
+        columns = [column[1] for column in cursor.fetchall()]
+
+        # Формируем запрос в зависимости от наличия столбцов
+        if 'full_name' in columns and 'teacher_id' in columns:
             cursor.execute("""
-                SELECT s.*, u.username as teacher_name 
-                FROM students s
-                LEFT JOIN users u ON s.teacher_id = u.id
-                WHERE s.id = ? AND s.teacher_id = ?
-            """, (student_id, session['user_id']))
-        elif session.get('is_parent'):
-            cursor.execute("""
-                SELECT s.*, u.username as teacher_name 
-                FROM students s
-                LEFT JOIN users u ON s.teacher_id = u.id
-                JOIN parents p ON s.id = p.student_id
-                WHERE s.id = ? AND p.user_id = ?
-            """, (student_id, session['user_id']))
+                SELECT id, username, full_name, start_date, initial_level 
+                FROM users 
+                WHERE role = 'student' AND teacher_id = ?
+                ORDER BY created_date DESC
+            """, (session['user_id'],))
         else:
-            cursor.execute("SELECT * FROM students WHERE id = ? LIMIT 0", (student_id,))
-
-        student = cursor.fetchone()
-
-        if not student:
-            flash("Ученик не найден или у вас нет прав доступа", "error")
-            return redirect(url_for("home"))
-
-        # Для учителей создаем недостающие уроки
-        if session.get('is_teacher'):
-            cursor.execute("SELECT COUNT(*) FROM lessons WHERE student_id = ?", (student_id,))
-            lesson_count = cursor.fetchone()[0]
-
-            if lesson_count < 8:
-                for i in range(lesson_count + 1, 9):
-                    cursor.execute(
-                        "INSERT INTO lessons (student_id, date, topic) VALUES (?, ?, ?)",
-                        (student_id, datetime.now().strftime("%Y-%m-%d"), f"Ковка детали {i}")
-                    )
-                conn.commit()
-
-        # Получаем уроки с данными мастерской
-        cursor.execute("""
-            SELECT id, student_id, date, topic, 
-                   COALESCE(understanding, 0) as understanding,
-                   COALESCE(participation, 0) as participation,
-                   COALESCE(NULLIF(homework, ''), '0') as homework,
-                   quality_score, resources_earned
-            FROM lessons 
-            WHERE student_id = ? 
-            ORDER BY id ASC
-            LIMIT 8
-        """, (student_id,))
-        lessons = cursor.fetchall()
-
-        # Получаем данные мастерской
-        resources = json.loads(
-            student['resources'] if student['resources'] else '{"coal": 0, "iron": 0, "steel": 0, "quality_gems": 0}')
-        workshop_level = student['workshop_level'] or 1
-        current_project = student['current_project'] or 'Простые инструменты'
-
-        # Получаем купленные предметы (исправленный запрос)
-        cursor.execute("""
-            SELECT wi.* 
-            FROM workshop_items wi
-            WHERE wi.student_id = ?
-        """, (student_id,))
-        workshop_items = cursor.fetchall()
-
-        # Создаем список купленных предметов с информацией из SHOP_ITEMS
-        purchased_items = []
-        for item in workshop_items:
-            shop_item = next((si for si in SHOP_ITEMS if si['id'] == item['item_id']), None)
-            if shop_item:
-                purchased_items.append({
-                    'id': item['id'],
-                    'item_id': item['item_id'],
-                    'name': shop_item['name'],
-                    'type': shop_item['type'],
-                    'effect': shop_item['effect'],
-                    'purchased_date': item['purchased_date'],
-                    'is_equipped': item['is_equipped']
-                })
-
-        # Проверяем, является ли текущий пользователь учителем этого ученика
-        is_current_teacher = session.get('is_teacher') and student['teacher_id'] == session['user_id']
-
-        # Получаем уровень мастерской
-        workshop_data = get_workshop_level_data(workshop_level)
-
-    except Exception as e:
-        flash("Произошла ошибка при загрузке данных ученика", "error")
-        print(f"Ошибка загрузки ученика: {e}")
-        print(f"Тип ошибки: {type(e).__name__}")
-        import traceback
-        traceback.print_exc()
-        return redirect(url_for("home"))
-    finally:
-        conn.close()
-
-    return render_template("student.html",
-                           student=student,
-                           lessons=lessons,
-                           resources=resources,
-                           workshop_level=workshop_level,
-                           workshop_data=workshop_data,
-                           current_project=current_project,
-                           workshop_items=purchased_items,  # Используем исправленный список
-                           is_current_teacher=is_current_teacher,
-                           current_date=datetime.now(),
-                           relativedelta=relativedelta)
-
-
-def migrate_db():
-    """Обновляет структуру базы данных до актуальной версии"""
-    print("Проверка миграций базы данных...")
-    try:
-        conn = get_db()
-        cursor = conn.cursor()
-
-        # Проверяем существование новых колонок
-        cursor.execute("PRAGMA table_info(lessons)")
-        columns = [col[1] for col in cursor.fetchall()]
-
-        # Добавляем отсутствующие колонки
-        if 'quality_score' not in columns:
-            print("Добавляем колонку quality_score в таблицу lessons")
-            cursor.execute("ALTER TABLE lessons ADD COLUMN quality_score INTEGER DEFAULT 0")
-
-        if 'resources_earned' not in columns:
-            print("Добавляем колонку resources_earned в таблицу lessons")
-            cursor.execute("ALTER TABLE lessons ADD COLUMN resources_earned TEXT DEFAULT '{}'")
-
-        # Проверяем таблицу students
-        cursor.execute("PRAGMA table_info(students)")
-        columns = [col[1] for col in cursor.fetchall()]
-
-        if 'workshop_level' not in columns:
-            print("Добавляем колонку workshop_level в таблицу students")
-            cursor.execute("ALTER TABLE students ADD COLUMN workshop_level INTEGER DEFAULT 1")
-
-        if 'resources' not in columns:
-            print("Добавляем колонку resources в таблицу students")
-            cursor.execute(
-                "ALTER TABLE students ADD COLUMN resources TEXT DEFAULT '{\"coal\": 0, \"iron\": 0, \"steel\": 0, \"quality_gems\": 0}'")
-
-        if 'current_project' not in columns:
-            print("Добавляем колонку current_project в таблицу students")
-            cursor.execute("ALTER TABLE students ADD COLUMN current_project TEXT DEFAULT 'Простые инструменты'")
-
-        # Проверяем существование таблицы workshop_items
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='workshop_items'")
-        if not cursor.fetchone():
-            print("Создаем таблицу workshop_items")
+            # Если столбцы еще не добавлены, используем базовый запрос
             cursor.execute("""
-                CREATE TABLE workshop_items (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    student_id INTEGER NOT NULL,
-                    item_id INTEGER NOT NULL,
-                    purchased_date TEXT NOT NULL,
-                    is_equipped BOOLEAN DEFAULT 0,
-                    FOREIGN KEY (student_id) REFERENCES students(id)
-                )
+                SELECT id, username, username as full_name, 
+                       'Не указана' as start_date, 'Не указан' as initial_level 
+                FROM users 
+                WHERE role = 'student'
+                ORDER BY id DESC
             """)
 
-        conn.commit()
-        print("Миграция базы данных завершена")
+        students = cursor.fetchall()
 
     except sqlite3.Error as e:
-        print(f"Ошибка при миграции базы данных: {e}")
-        raise
+        print(f"Ошибка при получении учеников: {e}")
+        students = []
+
     finally:
         conn.close()
 
-@app.route("/set_coins/<int:lesson_id>/<string:coin_type>", methods=["POST"])
+    return render_template("teacher_dashboard.html", students=students)
+
+
+@app.route("/tests")
 @login_required
-def set_coins(lesson_id, coin_type):
-    try:
-        coins = int(request.form['coins'])
-        student_id = request.form['student_id']
+def tests_list():
+    """Список всех тестов"""
+    conn = get_db()
+    cursor = conn.cursor()
 
-        conn = get_db()
-        cursor = conn.cursor()
-
-        # Проверяем права доступа
+    if session.get('role') == 'student':
         cursor.execute("""
-            SELECT 1 FROM lessons l
-            JOIN students s ON l.student_id = s.id
-            WHERE l.id = ? AND s.teacher_id = ?
-        """, (lesson_id, session['user_id']))
-
-        if not cursor.fetchone():
-            return jsonify({'error': 'Доступ запрещён'}), 403
-
-        # Обновляем данные и рассчитываем ресурсы
-        if coin_type == 'homework':
-            cursor.execute("""
-                UPDATE lessons SET homework = ?
-                WHERE id = ?
-            """, (str(coins), lesson_id))
-        else:
-            cursor.execute(f"""
-                UPDATE lessons SET {coin_type} = ?
-                WHERE id = ?
-            """, (coins, lesson_id))
-
-        # Получаем текущие значения для расчета ресурсов
+            SELECT t.id, t.title, t.description, t.created_date, u.username as creator_name,
+                   CASE WHEN tr.id IS NOT NULL THEN 1 ELSE 0 END as completed
+            FROM tests t
+            JOIN users u ON t.creator_id = u.id
+            LEFT JOIN test_results tr ON t.id = tr.test_id AND tr.student_id = ?
+            ORDER BY t.created_date DESC
+        """, (session['user_id'],))
+    else:
         cursor.execute("""
-            SELECT understanding, participation, homework 
-            FROM lessons WHERE id = ?
-        """, (lesson_id,))
-        lesson_data = cursor.fetchone()
+            SELECT t.id, t.title, t.description, t.created_date, u.username as creator_name,
+                   COUNT(tr.id) as completions
+            FROM tests t
+            JOIN users u ON t.creator_id = u.id
+            LEFT JOIN test_results tr ON t.id = tr.test_id
+            GROUP BY t.id
+            ORDER BY t.created_date DESC
+        """)
 
-        understanding = lesson_data['understanding'] or 0
-        participation = lesson_data['participation'] or 0
-        homework = lesson_data['homework'] or '0'
+    tests = cursor.fetchall()
+    conn.close()
 
-        # Рассчитываем ресурсы и качество
-        resources, quality_score = calculate_workshop_resources(
-            understanding, participation, homework
-        )
-
-        # Обновляем ресурсы в уроке
-        cursor.execute("""
-            UPDATE lessons 
-            SET quality_score = ?, resources_earned = ?
-            WHERE id = ?
-        """, (quality_score, json.dumps(resources), lesson_id))
-
-        # Обновляем общие ресурсы ученика
-        cursor.execute("SELECT resources FROM students WHERE id = ?", (student_id,))
-        student_resources = json.loads(cursor.fetchone()['resources'] or '{}')
-
-        for resource, amount in resources.items():
-            student_resources[resource] = student_resources.get(resource, 0) + amount
-
-        cursor.execute("""
-            UPDATE students SET resources = ? WHERE id = ?
-        """, (json.dumps(student_resources), student_id))
-
-        conn.commit()
-
-        return jsonify({
-            'success': True,
-            'coins': coins,
-            'resources': resources,
-            'quality_score': quality_score,
-            'total_resources': student_resources,
-            'updated_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
-
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'error': str(e)}), 500
-    finally:
-        conn.close()
+    return render_template("tests_list.html", tests=tests)
 
 
-@app.route("/workshop/shop")
+@app.route("/test/create", methods=['GET', 'POST'])
 @login_required
-def workshop_shop():
-    """Магазин предметов для мастерской"""
-    student_id = request.args.get('student_id')
+@teacher_required
+def create_test():
+    """Создание нового теста"""
+    if request.method == 'POST':
+        try:
+            title = request.form.get('title', '').strip()
+            description = request.form.get('description', '').strip()
 
-    if not student_id or not session.get('is_teacher'):
-        return redirect(url_for('home'))
+            # Получаем вопросы из формы
+            questions = []
+            question_count = 0
 
+            for i in range(1, 11):  # Максимум 10 вопросов
+                question_text = request.form.get(f'question_{i}', '').strip()
+                answer = request.form.get(f'answer_{i}', '').strip()
+
+                if question_text and answer:
+                    questions.append({
+                        'question': question_text,
+                        'answer': answer
+                    })
+                    question_count += 1
+
+            if question_count == 0:
+                flash('Добавьте хотя бы один вопрос', 'error')
+                return render_template('create_test.html')
+
+            # Сохраняем тест в базу данных
+            conn = get_db()
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "INSERT INTO tests (title, description, creator_id, questions, created_date) VALUES (?, ?, ?, ?, ?)",
+                (title, description, session['user_id'], json.dumps(questions),
+                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            )
+
+            conn.commit()
+            conn.close()
+
+            flash('Тест успешно создан!', 'success')
+            return redirect(url_for('tests_list'))
+
+        except Exception as e:
+            flash('Произошла ошибка при создании теста', 'error')
+            print(f"Ошибка создания теста: {e}")
+
+    return render_template('create_test.html')
+
+
+@app.route("/test/<int:test_id>/edit", methods=['GET', 'POST'])
+@login_required
+@teacher_required
+def edit_test(test_id):
+    """Редактирование теста"""
     conn = get_db()
     cursor = conn.cursor()
 
     # Проверяем права доступа
-    cursor.execute("""
-        SELECT 1 FROM students 
-        WHERE id = ? AND teacher_id = ?
-    """, (student_id, session['user_id']))
+    cursor.execute("SELECT * FROM tests WHERE id = ?", (test_id,))
+    test = cursor.fetchone()
 
-    if not cursor.fetchone():
-        flash("Доступ запрещен", "error")
+    if not test:
+        flash('Тест не найден', 'error')
+        return redirect(url_for('tests_list'))
+
+    if request.method == 'POST':
+        try:
+            title = request.form.get('title', '').strip()
+            description = request.form.get('description', '').strip()
+
+            # Получаем вопросы из формы
+            questions = []
+            question_count = 0
+
+            for i in range(1, 11):  # Максимум 10 вопросов
+                question_text = request.form.get(f'question_{i}', '').strip()
+                answer = request.form.get(f'answer_{i}', '').strip()
+
+                if question_text and answer:
+                    questions.append({
+                        'question': question_text,
+                        'answer': answer
+                    })
+                    question_count += 1
+
+            if question_count == 0:
+                flash('Добавьте хотя бы один вопрос', 'error')
+                return render_template('edit_test.html', test=test)
+
+            # Обновляем тест в базе данных
+            cursor.execute(
+                "UPDATE tests SET title = ?, description = ?, questions = ?, updated_date = ? WHERE id = ?",
+                (title, description, json.dumps(questions), datetime.now().strftime("%Y-%m-%d %H:%M:%S"), test_id)
+            )
+
+            conn.commit()
+            conn.close()
+
+            flash('Тест успешно обновлен!', 'success')
+            return redirect(url_for('tests_list'))
+
+        except Exception as e:
+            flash('Произошла ошибка при обновлении теста', 'error')
+            print(f"Ошибка обновления теста: {e}")
+
+    # Загружаем вопросы для редактирования
+    questions = json.loads(test['questions']) if test['questions'] else []
+
+    conn.close()
+    return render_template('edit_test.html', test=test, questions=questions)
+
+
+
+@app.route("/results/<int:result_id>")
+@login_required
+def test_results(result_id):
+    """Просмотр результатов теста"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Получаем результат
+    cursor.execute("""
+        SELECT tr.*, t.title as test_title, u.username as student_name
+        FROM test_results tr
+        JOIN tests t ON tr.test_id = t.id
+        JOIN users u ON tr.student_id = u.id
+        WHERE tr.id = ?
+    """, (result_id,))
+
+    result = cursor.fetchone()
+
+    if not result:
+        flash('Результат не найден', 'error')
         return redirect(url_for('home'))
 
-    # Получаем ресурсы ученика
-    cursor.execute("SELECT resources FROM students WHERE id = ?", (student_id,))
-    student = cursor.fetchone()
-    resources = json.loads(student['resources'] if student['resources'] else '{}')
+    # Проверяем права доступа
+    if session.get('role') == 'student' and result['student_id'] != session['user_id']:
+        flash('У вас нет прав для просмотра этого результата', 'error')
+        return redirect(url_for('home'))
+
+    answers = json.loads(result['answers']) if result['answers'] else []
+
+    conn.close()
+    return render_template('test_results.html', result=result, answers=answers)
+
+
+def check_achievements(student_id, cursor):
+    """Проверяет и присваивает достижения на основе количества звезд"""
+    # Получаем текущее количество звезд
+    cursor.execute("SELECT stars FROM users WHERE id = ?", (student_id,))
+    stars = cursor.fetchone()['stars']
+
+    # Получаем уже полученные достижения
+    cursor.execute("SELECT achievement_id FROM student_achievements WHERE student_id = ?", (student_id,))
+    achieved_ids = [row['achievement_id'] for row in cursor.fetchall()]
+
+    # Проверяем, какие достижения нужно присвоить
+    messages = []
+    for achievement_id, achievement in ACHIEVEMENTS.items():
+        if achievement_id not in achieved_ids and stars >= achievement['stars_required']:
+            # Присваиваем достижение
+            cursor.execute(
+                "INSERT INTO student_achievements (student_id, achievement_id, achieved_date) VALUES (?, ?, ?)",
+                (student_id, achievement_id, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            )
+
+            # Обновляем текущий ранг
+            cursor.execute(
+                "UPDATE users SET current_rank = ? WHERE id = ?",
+                (achievement['name'], student_id)
+            )
+
+            # Сообщение о достижении
+            messages.append(achievement['message'])
+
+    return messages
+
+@app.route("/teacher/student/<int:student_id>/test/<int:test_id>/take")
+@login_required
+@teacher_required
+def take_test(test_id, student_id):
+    """Страница прохождения теста"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Получаем тест
+    cursor.execute("SELECT * FROM tests WHERE id = ? AND student_id = ?", (test_id, student_id))
+    test = cursor.fetchone()
+
+    if not test:
+        flash('Тест не найден', 'error')
+        return redirect(url_for('student_dashboard', student_id=student_id))
+
+    questions = json.loads(test['questions']) if test['questions'] else []
+    question_index = int(request.args.get('question_index', 0))
+
+    # Получаем сохраненные ответы из сессии
+    session_key = f'test_{test_id}_answers'
+    user_answers = session.get(session_key, []) or ['' for _ in questions]
 
     conn.close()
 
-    return render_template('workshop_shop.html',
-                           shop_items=SHOP_ITEMS,
-                           resources=resources,
+    return render_template("test_take.html",
+                         test=test,
+                         questions=questions,
+                         current_question=question_index,
+                         total_questions=len(questions),
+                         user_answers=user_answers,
+                         student_id=student_id)
+
+
+@app.route("/teacher/student/<int:student_id>/test/<int:test_id>/answer/<int:question_index>", methods=['POST'])
+@login_required
+@teacher_required
+def process_test_answer(test_id, student_id, question_index):
+    """Обработка ответа на вопрос теста"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Получаем тест
+    cursor.execute("SELECT * FROM tests WHERE id = ? AND student_id = ?", (test_id, student_id))
+    test = cursor.fetchone()
+    questions = json.loads(test['questions']) if test['questions'] else []
+
+    # Сохраняем ответ в сессии
+    session_key = f'test_{test_id}_answers'
+    user_answers = session.get(session_key, []) or ['' for _ in questions]
+    user_answers[question_index] = request.form.get('answer', '').strip()
+    session[session_key] = user_answers
+
+    # Если это последний вопрос, завершаем тест
+    if request.form.get('finish') and question_index == len(questions) - 1:
+        return finish_test(test_id, student_id, questions, user_answers, cursor, conn)
+
+    # Переходим к следующему вопросу
+    next_question = min(question_index + 1, len(questions) - 1)
+    conn.close()
+
+    return redirect(url_for('take_test', test_id=test_id, student_id=student_id, question_index=next_question))
+
+
+def finish_test(test_id, student_id, questions, user_answers, cursor, conn):
+    """Завершение теста и подсчет результатов"""
+    # Получаем данные теста
+    cursor.execute("SELECT * FROM tests WHERE id = ?", (test_id,))
+    test = cursor.fetchone()
+
+    if not test:
+        flash('Тест не найден', 'error')
+        return redirect(url_for('student_dashboard', student_id=student_id))
+
+    # Проверяем ответы
+    correct_answers = 0
+    results = []
+
+    for i, question in enumerate(questions):
+        is_correct = user_answers[i].lower() == question['answer'].lower()
+        if is_correct:
+            correct_answers += 1
+
+        results.append({
+            'question': question['question'],
+            'user_answer': user_answers[i],
+            'correct_answer': question['answer'],
+            'is_correct': is_correct
+        })
+
+    # Вычисляем результаты
+    total_questions = len(questions)
+    percentage = round((correct_answers / total_questions) * 100) if total_questions > 0 else 0
+
+    # Начисляем звезды в зависимости от процента правильных ответов
+    if percentage >= 90:
+        stars_earned = 3
+    elif percentage >= 70:
+        stars_earned = 2
+    elif percentage >= 50:
+        stars_earned = 1
+    else:
+        stars_earned = 0
+
+    # Сохраняем результат
+    cursor.execute(
+        """INSERT INTO test_results 
+        (test_id, student_id, score, total_questions, percentage, stars_earned, answers, completed_date) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (test_id, student_id, correct_answers, total_questions, percentage,
+         stars_earned, json.dumps(results), datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    )
+
+    # Обновляем общее количество звезд ученика
+    if stars_earned > 0:
+        cursor.execute(
+            "UPDATE users SET stars = stars + ? WHERE id = ?",
+            (stars_earned, student_id)
+        )
+
+        # Проверяем достижения
+        achievement_messages = check_achievements(student_id, cursor)
+
+    conn.commit()
+    result_id = cursor.lastrowid
+
+    # Очищаем ответы из сессии
+    session_key = f'test_{test_id}_answers'
+    if session_key in session:
+        del session[session_key]
+
+    conn.close()
+
+    return render_template("test_complete.html",
+                           test=test,
+                           result={
+                               'percentage': percentage,
+                               'stars_earned': stars_earned,
+                               'score': correct_answers,
+                               'total_questions': total_questions
+                           },
+                           answers=results,
+                           achievement_messages=achievement_messages or [],
                            student_id=student_id)
 
 
-@app.route("/workshop/buy_item", methods=["POST"])
+@app.route("/achievements")
+@login_required
+def achievements():
+    """Страница с достижениями"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    if session.get('role') == 'student':
+        # Для ученика - показываем его достижения
+        cursor.execute("""
+            SELECT sa.achievement_id, sa.achieved_date
+            FROM student_achievements sa
+            WHERE sa.student_id = ?
+            ORDER BY sa.achievement_id
+        """, (session['user_id'],))
+
+        student_achievements = cursor.fetchall()
+
+        # Получаем текущий прогресс
+        cursor.execute("SELECT stars, current_rank FROM users WHERE id = ?", (session['user_id'],))
+        user = cursor.fetchone()
+
+        conn.close()
+        return render_template('student_achievements.html',
+                               student_achievements=student_achievements,
+                               user=user,
+                               all_achievements=ACHIEVEMENTS)
+
+    else:
+        # Для учителя - показываем достижения всех учеников
+        cursor.execute("""
+            SELECT u.username, u.stars, u.current_rank, 
+                   COUNT(sa.achievement_id) as achievements_count,
+                   MAX(sa.achieved_date) as last_achievement
+            FROM users u
+            LEFT JOIN student_achievements sa ON u.id = sa.student_id
+            WHERE u.role = 'student'
+            GROUP BY u.id
+            ORDER BY u.stars DESC
+        """)
+
+        students = cursor.fetchall()
+        conn.close()
+
+        return render_template('teacher_achievements.html', students=students)
+
+
+@app.route("/profile")
+@login_required
+def profile():
+    """Страница профиля пользователя"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT username, role, stars, current_rank FROM users WHERE id = ?", (session['user_id'],))
+    user = cursor.fetchone()
+
+    if session.get('role') == 'student':
+        # Для ученика - получаем статистику
+        cursor.execute("""
+            SELECT COUNT(*) as tests_taken, 
+                   SUM(stars_earned) as total_stars_earned,
+                   AVG(percentage) as average_score
+            FROM test_results 
+            WHERE student_id = ?
+        """, (session['user_id'],))
+
+        stats = cursor.fetchone()
+
+        conn.close()
+        return render_template('student_profile.html', user=user, stats=stats)
+
+    else:
+        # Для учителя - получаем статистику созданных тестов
+        cursor.execute("""
+            SELECT COUNT(*) as tests_created,
+                   COUNT(DISTINCT tr.student_id) as students_using,
+                   SUM(tr.stars_earned) as total_stars_given
+            FROM tests t
+            LEFT JOIN test_results tr ON t.id = tr.test_id
+            WHERE t.creator_id = ?
+        """, (session['user_id'],))
+
+        stats = cursor.fetchone()
+
+        conn.close()
+        return render_template('teacher_profile.html', user=user, stats=stats)
+
+
+# Запуск приложения
+with app.app_context():
+    init_db()
+    create_first_admin()
+
+
+@app.route("/teacher/students")
 @login_required
 @teacher_required
-def buy_workshop_item():
-    """Покупка предмета в магазине"""
-    try:
-        item_id = int(request.form['item_id'])
-        student_id = int(request.form['student_id'])
-
-        conn = get_db()
-        cursor = conn.cursor()
-
-        # Проверяем права доступа
-        cursor.execute("""
-            SELECT 1 FROM students 
-            WHERE id = ? AND teacher_id = ?
-        """, (student_id, session['user_id']))
-
-        if not cursor.fetchone():
-            return jsonify({'error': 'Доступ запрещен'}), 403
-
-        # Получаем предмет и ресурсы ученика
-        item = next((i for i in SHOP_ITEMS if i['id'] == item_id), None)
-        if not item:
-            return jsonify({'error': 'Предмет не найден'}), 404
-
-        cursor.execute("SELECT resources FROM students WHERE id = ?", (student_id,))
-        student = cursor.fetchone()
-        resources = json.loads(student['resources'] if student['resources'] else '{}')
-
-        # Проверяем достаточно ли ресурсов
-        if resources.get('coal', 0) < item['price']:
-            return jsonify({'error': 'Недостаточно угля'}), 400
-
-        # Списание ресурсов
-        resources['coal'] -= item['price']
-
-        # Добавляем предмет
-        cursor.execute("""
-            INSERT INTO workshop_items (student_id, item_id, purchased_date)
-            VALUES (?, ?, ?)
-        """, (student_id, item_id, datetime.now().strftime("%Y-%m-%d")))
-
-        # Обновляем ресурсы
-        cursor.execute("""
-            UPDATE students SET resources = ? WHERE id = ?
-        """, (json.dumps(resources), student_id))
-
-        conn.commit()
-
-        return jsonify({
-            'success': True,
-            'item': item,
-            'remaining_coal': resources['coal'],
-            'message': f'Предмет "{item["name"]}" приобретен!'
-        })
-
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'error': str(e)}), 500
-    finally:
-        conn.close()
-
-
-@app.route("/workshop/upgrade", methods=["POST"])
-@login_required
-@teacher_required
-def upgrade_workshop():
-    """Улучшение уровня мастерской"""
-    try:
-        student_id = int(request.form['student_id'])
-
-        conn = get_db()
-        cursor = conn.cursor()
-
-        # Проверяем права доступа
-        cursor.execute("""
-            SELECT workshop_level, resources FROM students 
-            WHERE id = ? AND teacher_id = ?
-        """, (student_id, session['user_id']))
-
-        student = cursor.fetchone()
-        if not student:
-            return jsonify({'error': 'Доступ запрещен'}), 403
-
-        current_level = student['workshop_level'] or 1
-        resources = json.loads(student['resources'] if student['resources'] else '{}')
-
-        # Стоимость улучшения
-        upgrade_cost = current_level * 100  # 100, 200, 300 угля
-
-        if resources.get('coal', 0) < upgrade_cost:
-            return jsonify({'error': f'Недостаточно угля. Нужно: {upgrade_cost}'}), 400
-
-        if current_level >= max(WORKSHOP_LEVELS.keys()):
-            return jsonify({'error': 'Максимальный уровень достигнут'}), 400
-
-        # Списание ресурсов и улучшение
-        resources['coal'] -= upgrade_cost
-        new_level = current_level + 1
-
-        cursor.execute("""
-            UPDATE students 
-            SET workshop_level = ?, resources = ?
-            WHERE id = ?
-        """, (new_level, json.dumps(resources), student_id))
-
-        conn.commit()
-
-        return jsonify({
-            'success': True,
-            'new_level': new_level,
-            'level_data': WORKSHOP_LEVELS[new_level],
-            'remaining_coal': resources['coal'],
-            'message': f'Мастерская улучшена до уровня {new_level}!'
-        })
-
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'error': str(e)}), 500
-    finally:
-        conn.close()
-
-
-
-
-
-@app.route("/update_homework/<int:lesson_id>", methods=["POST"])
-@login_required
-def update_homework(lesson_id):
-    homework = request.form.get("homework", "")
-    student_id = request.form.get("student_id")
-
-    conn = sqlite3.connect("school.db")
+def teacher_students():
+    """Страница управления учениками"""
+    conn = get_db()
     cursor = conn.cursor()
+
     try:
-        cursor.execute(
-            "UPDATE lessons SET homework = ? WHERE id = ?",
-            (homework, lesson_id))
-        conn.commit()
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        # Проверяем существование столбцов
+        cursor.execute("PRAGMA table_info(users)")
+        columns = [column[1] for column in cursor.fetchall()]
+
+        # Формируем запрос в зависимости от наличия столбцов
+        if 'teacher_id' in columns:
+            cursor.execute("""
+                SELECT u.id, u.username, u.full_name, u.stars, u.current_rank, 
+                       u.start_date, u.goal, u.initial_level,
+                       COUNT(tr.id) as tests_completed,
+                       MAX(tr.completed_date) as last_activity
+                FROM users u
+                LEFT JOIN test_results tr ON u.id = tr.student_id
+                WHERE u.role = 'student' AND u.teacher_id = ?
+                GROUP BY u.id
+                ORDER BY u.username
+            """, (session['user_id'],))
+        else:
+            cursor.execute("""
+                SELECT u.id, u.username, u.username as full_name, u.stars, u.current_rank,
+                       'Не указана' as start_date, 'Не указана' as goal, 'Не указан' as initial_level,
+                       COUNT(tr.id) as tests_completed,
+                       MAX(tr.completed_date) as last_activity
+                FROM users u
+                LEFT JOIN test_results tr ON u.id = tr.student_id
+                WHERE u.role = 'student'
+                GROUP BY u.id
+                ORDER BY u.username
+            """)
+
+        students = cursor.fetchall()
+
+        # Статистика
+        if 'teacher_id' in columns:
+            cursor.execute("SELECT COUNT(*) as total FROM users WHERE role = 'student' AND teacher_id = ?",
+                           (session['user_id'],))
+        else:
+            cursor.execute("SELECT COUNT(*) as total FROM users WHERE role = 'student'")
+        total_students = cursor.fetchone()['total']
+
+        cursor.execute("SELECT SUM(stars) as total FROM users WHERE role = 'student'")
+        total_stars = cursor.fetchone()['total'] or 0
+
+        cursor.execute("SELECT COUNT(DISTINCT student_id) as active FROM test_results")
+        active_students = cursor.fetchone()['active']
+
+        cursor.execute("SELECT COUNT(*) as total FROM test_results")
+        tests_completed = cursor.fetchone()['total']
+
+    except sqlite3.Error as e:
+        print(f"Ошибка при получении данных: {e}")
+        students = []
+        total_students = 0
+        total_stars = 0
+        active_students = 0
+        tests_completed = 0
+
     finally:
         conn.close()
 
-@app.route("/student/<int:student_id>/awards")
-@login_required
-def student_awards(student_id):
-    current_date = datetime.now()
-    selected_month = request.args.get('month', current_date.month, type=int)
-    selected_year = request.args.get('year', current_date.year, type=int)
+    # Передаем текущую дату для значения по умолчанию
+    now_date = datetime.now().strftime('%Y-%m-%d')
 
-    conn = sqlite3.connect("school.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM students WHERE id = ?", (student_id,))
-    student = cursor.fetchone()
+    return render_template("teacher_students.html",
+                           students=students,
+                           total_students=total_students,
+                           total_stars=total_stars,
+                           active_students=active_students,
+                           tests_completed=tests_completed,
+                           now_date=now_date)
 
-    cursor.execute("SELECT year, month, award FROM monthly_awards WHERE student_id = ?", (student_id,))
-    awards = {(year, month): award for year, month, award in cursor.fetchall()}
-    conn.close()
 
-    months = []
-    for i in range(-3, 3):
-        date = datetime(selected_year, selected_month, 1) + relativedelta(months=i)
-        months.append({
-            'year': date.year,
-            'month': date.month,
-            'name': date.strftime('%B'),
-            'is_current': (date.year == current_date.year and date.month == current_date.month),
-            'award': awards.get((date.year, date.month))
-        })
-
-    return render_template("awards.html",
-                         student=student,
-                         months=months,
-                         current_date=current_date,
-                         selected_month=selected_month,
-                         selected_year=selected_year)
-
-@app.route("/update_award", methods=["POST"])
-@login_required
-def update_award():
-    student_id = request.form.get("student_id")
-    year = int(request.form.get("year"))
-    month = int(request.form.get("month"))
-    award = int(request.form.get("award"))
-
-    conn = sqlite3.connect("school.db")
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            INSERT OR REPLACE INTO monthly_awards 
-            (student_id, year, month, award) 
-            VALUES (?, ?, ?, ?)
-        """, (student_id, year, month, award))
-        conn.commit()
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        conn.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-    finally:
-        conn.close()
-@app.route("/add_student", methods=["POST"])
+@app.route("/teacher/students/add", methods=['POST'])
 @login_required
 @teacher_required
 def add_student():
-    name = request.form.get("name", "").strip()
-    level = request.form.get("level", "").strip()
-    start_date = request.form.get("start_date", "").strip()
-    goal = request.form.get("goal", "").strip()
-
-    errors = []
-    if not name:
-        errors.append("Имя ученика обязательно")
-    elif len(name) > 50:
-        errors.append("Имя слишком длинное (макс. 50 символов)")
-
-    if errors:
-        for error in errors:
-            flash(error, "error")
-        return redirect(url_for("home"))
-
-    conn = sqlite3.connect("school.db")
-    cursor = conn.cursor()
+    """Добавление нового ученика с автоматической генерацией пароля"""
     try:
+        username = request.form.get('username', '').strip()
+        full_name = request.form.get('full_name', '').strip()
+        start_date = request.form.get('start_date', '').strip()
+        goal = request.form.get('goal', '').strip()
+        initial_level = request.form.get('initial_level', '').strip()
+
+        # Валидация
+        errors = []
+        if len(username) < 3:
+            errors.append('Логин должен содержать минимум 3 символа')
+        if not full_name:
+            errors.append('Укажите имя ученика')
+        if not start_date:
+            errors.append('Укажите дату начала занятий')
+        if not goal:
+            errors.append('Укажите цель обучения')
+        if not initial_level:
+            errors.append('Укажите начальный уровень')
+
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+            return redirect(url_for('teacher_students'))
+
+        # Проверяем, существует ли уже пользователь с таким username
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            flash('Пользователь с таким логином уже существует', 'error')
+            conn.close()
+            return redirect(url_for('teacher_students'))
+
+        # Генерируем автоматический пароль (6 цифр)
+        import random
+        password = str(random.randint(100000, 999999))
+        hashed_password = generate_password_hash(password)
+
+        current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         cursor.execute(
-            "INSERT INTO students (name, level, start_date, goal, teacher_id) VALUES (?, ?, ?, ?, ?)",
-            (name, level if level else None,
-             start_date if start_date else None,
-             goal if goal else None,
-             session['user_id'])
+            '''INSERT INTO users 
+            (username, password, role, current_rank, stars, 
+             full_name, start_date, goal, initial_level, teacher_id, created_date) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (username, hashed_password, 'student', 'Новичок', 0,
+             full_name, start_date, goal, initial_level, session['user_id'], current_date)
         )
+
         conn.commit()
-        flash("Ученик добавлен!", "success")
-        return redirect(url_for("success"))  # Перенаправление на страницу успеха
-    except sqlite3.IntegrityError:
-        flash("Ученик с таким именем уже существует", "error")
-    except Exception as e:
-        flash(f"Ошибка при добавлении ученика: {str(e)}", "error")
-    finally:
         conn.close()
 
-    return redirect(url_for("home"))
+        flash(f'Ученик {full_name} успешно добавлен! Логин: {username}, Пароль: {password}', 'success')
+
+    except sqlite3.Error as e:
+        flash('Произошла ошибка при добавлении ученика', 'error')
+        print(f"Ошибка добавления ученика: {e}")
+    except Exception as e:
+        flash('Произошла непредвиденная ошибка', 'error')
+        print(f"Ошибка добавления ученика: {e}")
+
+    return redirect(url_for('teacher_students'))
 
 
-@app.route("/success")
+@app.route("/teacher/student/<int:student_id>/dashboard")
 @login_required
-def success():
-    """Страница успешного добавления ученика"""
-    return render_template("success.html")
+@teacher_required
+def student_dashboard(student_id):
+    """Профиль ученика с тестами"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Получаем данные ученика
+    cursor.execute("SELECT * FROM users WHERE id = ? AND role = 'student'", (student_id,))
+    student = cursor.fetchone()
+
+    if not student:
+        flash('Ученик не найден', 'error')
+        return redirect(url_for('teacher_students'))
+
+    # Получаем тесты для этого ученика
+    cursor.execute("SELECT * FROM tests WHERE student_id = ? ORDER BY created_date DESC", (student_id,))
+    tests = []
+    for test in cursor.fetchall():
+        test_dict = dict(test)
+        test_dict['questions'] = json.loads(test['questions']) if test['questions'] else []
+        tests.append(test_dict)
+
+    # Получаем результаты тестов
+    cursor.execute("""
+        SELECT tr.*, t.title as test_title 
+        FROM test_results tr 
+        JOIN tests t ON tr.test_id = t.id 
+        WHERE tr.student_id = ? 
+        ORDER BY tr.completed_date DESC
+    """, (student_id,))
+    test_results = cursor.fetchall()
+
+    conn.close()
+
+    return render_template("student_dashboard.html",
+                           student=student,
+                           tests=tests,
+                           test_results=test_results)
 
 
-with app.app_context():
-    init_db()
-    migrate_db()  # Добавьте эту строку
-    create_first_teacher()
+@app.route("/teacher/student/<int:student_id>/test/create", methods=['POST'])
+@login_required
+@teacher_required
+def create_test_for_student(student_id):
+    """Создание теста для конкретного ученика"""
+    try:
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+
+        # Получаем вопросы из формы
+        questions = []
+        question_count = 0
+
+        for i in range(1, 11):  # Проверяем до 10 вопросов
+            question_text = request.form.get(f'question_{i}', '').strip()
+            answer = request.form.get(f'answer_{i}', '').strip()
+
+            if question_text and answer:  # Добавляем только если оба поля заполнены
+                questions.append({
+                    'question': question_text,
+                    'answer': answer
+                })
+                question_count += 1
+
+        if question_count == 0:
+            flash('Добавьте хотя бы один вопрос', 'error')
+            return redirect(url_for('student_dashboard', student_id=student_id))
+
+        # Сохраняем тест в базу данных
+        conn = get_db()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "INSERT INTO tests (title, description, creator_id, student_id, questions, created_date) VALUES (?, ?, ?, ?, ?, ?)",
+            (title, description, session['user_id'], student_id, json.dumps(questions),
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        )
+
+        conn.commit()
+        conn.close()
+
+        flash('Тест успешно создан!', 'success')
+
+    except Exception as e:
+        flash('Произошла ошибка при создании теста', 'error')
+        print(f"Ошибка создания теста: {e}")
+
+    return redirect(url_for('student_dashboard', student_id=student_id))
+
+@app.route("/teacher/students/delete/<int:student_id>", methods=['POST'])
+@login_required
+@teacher_required
+def delete_student(student_id):
+    """Удаление ученика"""
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+
+            # Проверяем, что пользователь является учеником
+            cursor.execute("SELECT username FROM users WHERE id = ? AND role = 'student'", (student_id,))
+            student = cursor.fetchone()
+
+            if not student:
+                return jsonify({'success': False, 'message': 'Ученик не найден'})
+
+            # Удаляем связанные данные
+            cursor.execute("DELETE FROM test_results WHERE student_id = ?", (student_id,))
+            cursor.execute("DELETE FROM student_achievements WHERE student_id = ?", (student_id,))
+            cursor.execute("DELETE FROM users WHERE id = ?", (student_id,))
+
+            conn.commit()
+
+        return jsonify({'success': True, 'message': f'Ученик {student["username"]} удалён'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route("/teacher/student/<int:student_id>")
+@login_required
+@teacher_required
+def student_details(student_id):
+    """Детальная страница ученика"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Получаем данные ученика
+    cursor.execute("SELECT * FROM users WHERE id = ? AND role = 'student'", (student_id,))
+    student = cursor.fetchone()
+
+    if not student:
+        flash('Ученик не найден', 'error')
+        return redirect(url_for('teacher_students'))
+
+    # Получаем результаты тестов
+    cursor.execute("""
+        SELECT tr.*, t.title as test_title
+        FROM test_results tr
+        JOIN tests t ON tr.test_id = t.id
+        WHERE tr.student_id = ?
+        ORDER BY tr.completed_date DESC
+    """, (student_id,))
+    test_results = cursor.fetchall()
+
+    # Получаем достижения ученика
+    cursor.execute("SELECT achievement_id FROM student_achievements WHERE student_id = ?", (student_id,))
+    student_achievements = [row['achievement_id'] for row in cursor.fetchall()]
+
+    conn.close()
+
+    return render_template("student_details.html",
+                           student=student,
+                           test_results=test_results,
+                           student_achievements=student_achievements,
+                           achievements=ACHIEVEMENTS)
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True)
