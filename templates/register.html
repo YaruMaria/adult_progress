@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --primary-dark: #1a252f;
+            --accent: #3498db;
+            --white: #FFFFFF;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --error: #e74c3c;
+            --success: #2ecc71;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--light);
+            padding: 20px;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .auth-header {
+            background: var(--primary);
+            color: var(--white);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .auth-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .role-selection {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .role-option {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-option.selected {
+            border-color: var(--accent);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .role-option i {
+            font-size: 20px;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--primary);
+        }
+
+        .role-option.selected i {
+            color: var(--accent);
+        }
+
+        input[type="radio"] {
+            display: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .auth-footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            color: #7f8c8d;
+            border-top: 1px solid var(--light);
+        }
+
+        .auth-footer a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .error-message {
+            color: var(--error);
+            font-size: 13px;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .alert-error {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            border-left: 4px solid var(--error);
+        }
+
+        .alert-success {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+
+        .alert i {
+            margin-right: 10px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>Регистрация</h1>
+            <p>Создайте новый аккаунт</p>
+        </div>
+
+        <div class="auth-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('register') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group">
+                    <label for="username" class="form-label">Логин</label>
+                    <input type="text" id="username" name="username" class="form-input"
+                           placeholder="Придумайте логин" required minlength="3"
+                           value="{{ username if username }}">
+                    {% if 'username' in form_errors %}
+                        <span class="error-message">{{ form_errors.username }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" id="password" name="password" class="form-input"
+                           placeholder="Не менее 6 символов" required minlength="6">
+                    {% if 'password' in form_errors %}
+                        <span class="error-message">{{ form_errors.password }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Подтвердите пароль</label>
+                    <input type="password" id="confirm_password" name="confirm_password"
+                           class="form-input" placeholder="Повторите пароль" required>
+                    {% if 'confirm_password' in form_errors %}
+                        <span class="error-message">{{ form_errors.confirm_password }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="role-selection">
+                    <label class="role-option {% if request.form.get('role') == 'teacher' %}selected{% endif %}">
+                        <input type="radio" name="role" value="teacher" {% if request.form.get('role') == 'teacher' %}checked{% endif %} required>
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        Учитель
+                    </label>
+
+                    <label class="role-option {% if request.form.get('role') == 'parent' %}selected{% endif %}">
+                        <input type="radio" name="role" value="parent" {% if request.form.get('role') == 'parent' %}checked{% endif %} required>
+                        <i class="fas fa-user-friends"></i>
+                        Родитель
+                    </label>
+                </div>
+
+                <button type="submit" class="btn">Зарегистрироваться</button>
+            </form>
+        </div>
+
+        <div class="auth-footer">
+            Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.role-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.role-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
+        });
+    </script>
+</body>
+</html>

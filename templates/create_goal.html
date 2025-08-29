@@ -1,0 +1,60 @@
+@app.route('/create_goal', methods=['GET', 'POST'])
+@login_required
+def create_goal():
+    if request.method == 'POST':
+        user_id = session['user_id']
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        
+        # Валидация данных
+        errors = {}
+        
+        if not name:
+            errors['name'] = 'Название цели обязательно'
+        elif len(name) > 100:
+            errors['name'] = 'Название не должно превышать 100 символов'
+        
+        if len(description) > 500:
+            errors['description'] = 'Описание не должно превышать 500 символов'
+        
+        try:
+            total_parts = int(request.form.get('total_parts', 10))
+            if total_parts <= 0:
+                errors['total_parts'] = 'Количество частей должно быть положительным числом'
+            elif total_parts > 1000:
+                errors['total_parts'] = 'Слишком большое количество частей'
+        except ValueError:
+            errors['total_parts'] = 'Введите корректное число'
+        
+        if errors:
+            return render_template('create_goal.html', 
+                                 errors=errors,
+                                 name=name,
+                                 description=description,
+                                 total_parts=request.form.get('total_parts', ''))
+        
+        try:
+            with sqlite3.connect(app.config['DATABASE']) as conn:
+                cursor = conn.cursor()
+                
+                # Создаем новую цель
+                cursor.execute('''
+                    INSERT INTO goals (user_id, name, description, total_parts, created_date)
+                    VALUES (?, ?, ?, ?, DATE('now'))
+                ''', (user_id, name, description, total_parts))
+                
+                goal_id = cursor.lastrowid
+                conn.commit()
+                
+                flash(f'Цель "{name}" успешно создана!', 'success')
+                return redirect(url_for('forge', goal_id=goal_id))
+                
+        except sqlite3.Error as e:
+            flash(f'Ошибка при создании цели: {str(e)}', 'error')
+            return render_template('create_goal.html',
+                                 name=name,
+                                 description=description,
+                                 total_parts=total_parts)
+    
+    # GET запрос - показать форму
+    return render_template('create_goal.html')

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <h1><i class="fas fa-server"></i> 500</h1>
+        <h2>Внутренняя ошибка сервера</h2>
+        <p>Произошла непредвиденная ошибка. Пожалуйста, попробуйте позже.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i> Вернуться на главную
+        </a>
+    </div>
+</div>
+
+<style>
+    .error-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 60vh;
+        text-align: center;
+    }
+
+    .error-content h1 {
+        font-size: 4rem;
+        color: var(--error);
+        margin-bottom: 1rem;
+    }
+
+    .error-content h2 {
+        font-size: 2rem;
+        color: var(--dark);
+        margin-bottom: 1rem;
+    }
+
+    .error-content p {
+        color: var(--gray);
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Образовательная платформа</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: #4e73df;
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .auth-buttons button {
+            background-color: white;
+            color: #4e73df;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .auth-buttons button:hover {
+            background-color: #f8f9fc;
+            transform: translateY(-2px);
+        }
+
+        .page {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .active {
+            display: block;
+        }
+
+        h2 {
+            color: #4e73df;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        input {
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #4e73df;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2e59d9;
+        }
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stars {
+            font-size: 24px;
+            color: #ffc107;
+        }
+
+        .test-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .test-list {
+            margin-top: 20px;
+        }
+
+        .test-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-actions button {
+            margin-left: 10px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .question-editor {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .question-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+
+        .test-interface {
+            margin-bottom: 20px;
+        }
+
+        .question-display {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .results {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .result-percentage {
+            font-size: 36px;
+            font-weight: bold;
+            color: #4e73df;
+            margin: 15px 0;
+        }
+
+        .achievements {
+            margin-top: 30px;
+        }
+
+        .achievement-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: #f8f9fc;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #4e73df;
+            color: white;
+            border-radius: 15px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .error-message {
+            color: #e74a3b;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .success-message {
+            color: #1cc88a;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">Образовательная платформа</div>
+            <div class="auth-buttons">
+                <button id="showRegister">Регистрация</button>
+                <button id="showLogin">Вход</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Страница регистрации -->
+        <div id="registerPage" class="page">
+            <h2>Регистрация</h2>
+            <form id="registerForm">
+                <input type="text" id="regUsername" placeholder="Имя пользователя" required>
+                <input type="password" id="regPassword" placeholder="Пароль" required>
+                <input type="password" id="regConfirmPassword" placeholder="Подтвердите пароль" required>
+                <button type="submit">Зарегистрироваться</button>
+            </form>
+            <p style="text-align: center; margin-top: 15px;">
+                Уже есть аккаунт? <a href="#" id="goToLogin">Войти</a>
+            </p>
+        </div>
+
+        <!-- Страница входа -->
+        <div id="loginPage" class="page">
+            <h2>Вход в систему</h2>
+            <form id="loginForm">
+                <input type="text" id="loginUsername" placeholder="Имя пользователя" required>
+                <input type="password" id="loginPassword" placeholder="Пароль" required>
+                <button type="submit">Войти</button>
+            </form>
+            <p style="text-align: center; margin-top: 15px;">
+                Нет аккаунта? <a href="#" id="goToRegister">Зарегистрироваться</a>
+            </p>
+        </div>
+
+        <!-- Основная страница -->
+        <div id="mainPage" class="page">
+            <div class="profile-header">
+                <h2>Добро пожаловать, <span id="userName">Пользователь</span>!</h2>
+                <div class="stars">★ <span id="totalStars">0</span></div>
+            </div>
+
+            <div class="test-controls">
+                <button id="createTestBtn">Создать тест</button>
+                <button id="showAchievementsBtn">Мои достижения</button>
+            </div>
+
+            <div id="testCreationSection" style="display: none;">
+                <h3>Создание теста</h3>
+                <div class="question-editor">
+                    <input type="text" id="testTitle" placeholder="Название теста" style="margin-bottom: 15px;">
+                    <div id="questionsContainer"></div>
+                    <button id="addQuestionBtn" style="background-color: #1cc88a;">Добавить вопрос</button>
+                    <button id="saveTestBtn" style="margin-top: 15px;">Сохранить тест</button>
+                </div>
+            </div>
+
+            <div id="testListSection">
+                <h3>Мои тесты</h3>
+                <div class="test-list" id="testsList">
+                    <!-- Тесты будут добавляться здесь динамически -->
+                </div>
+            </div>
+
+            <div id="testPassingSection" style="display: none;">
+                <h3>Прохождение теста: <span id="currentTestTitle"></span></h3>
+                <div class="test-interface">
+                    <div class="question-display" id="currentQuestion"></div>
+                    <input type="text" id="userAnswer" placeholder="Ваш ответ">
+                    <div class="navigation-buttons">
+                        <button id="prevQuestionBtn">Назад</button>
+                        <button id="nextQuestionBtn">Вперед</button>
+                    </div>
+                    <button id="finishTestBtn" style="display: none; margin-top: 15px;">Завершить тест</button>
+                </div>
+            </div>
+
+            <div id="testResultsSection" style="display: none;">
+                <div class="results">
+                    <h3>Результаты теста</h3>
+                    <div class="result-percentage" id="resultPercentage"></div>
+                    <div class="stars">Получено звёзд: <span id="earnedStars">0</span></div>
+                    <div id="resultDetails" style="margin-top: 20px;"></div>
+                    <button id="backToProfileBtn" style="margin-top: 20px;">Вернуться в профиль</button>
+                </div>
+            </div>
+
+            <div id="achievementsSection" style="display: none;">
+                <h3>Мои достижения</h3>
+                <div class="current-rank">
+                    <h4>Текущий статус: <span id="currentRank">Новичок</span></h4>
+                </div>
+                <div class="achievements" id="achievementsList">
+                    <!-- Достижения будут добавляться здесь динамически -->
+                </div>
+                <button id="backFromAchievementsBtn" style="margin-top: 20px;">Назад</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Данные приложения
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let currentUser = null;
+        let tests = JSON.parse(localStorage.getItem('tests')) || [];
+        let currentTest = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+
+        // Элементы DOM
+        const registerPage = document.getElementById('registerPage');
+        const loginPage = document.getElementById('loginPage');
+        const mainPage = document.getElementById('mainPage');
+
+        // Показать страницу регистрации по умолчанию
+        window.addEventListener('load', () => {
+            showPage(registerPage);
+        });
+
+        // Навигация
+        document.getElementById('showRegister').addEventListener('click', () => showPage(registerPage));
+        document.getElementById('showLogin').addEventListener('click', () => showPage(loginPage));
+        document.getElementById('goToLogin').addEventListener('click', (e) => {
+            e.preventDefault();
+            showPage(loginPage);
+        });
+        document.getElementById('goToRegister').addEventListener('click', (e) => {
+            e.preventDefault();
+            showPage(registerPage);
+        });
+
+        // Функция показа страницы
+        function showPage(page) {
+            registerPage.classList.remove('active');
+            loginPage.classList.remove('active');
+            mainPage.classList.remove('active');
+
+            page.classList.add('active');
+        }
+
+        // Регистрация
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                alert('Пароли не совпадают!');
+                return;
+            }
+
+            if (users.find(user => user.username === username)) {
+                alert('Пользователь с таким именем уже существует!');
+                return;
+            }
+
+            const newUser = {
+                username,
+                password,
+                stars: 0,
+                achievements: [],
+                rank: 'Новичок'
+            };
+
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+
+            alert('Регистрация успешна! Теперь вы можете войти.');
+            showPage(loginPage);
+        });
+
+        // Вход
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const user = users.find(u => u.username === username && u.password === password);
+
+            if (!user) {
+                alert('Неверное имя пользователя или пароль!');
+                return;
+            }
+
+            currentUser = user;
+            document.getElementById('userName').textContent = user.username;
+            document.getElementById('totalStars').textContent = user.stars;
+
+            loadUserTests();
+            showPage(mainPage);
+        });
+
+        // Загрузка тестов пользователя
+        function loadUserTests() {
+            const testsList = document.getElementById('testsList');
+            testsList.innerHTML = '';
+
+            const userTests = tests.filter(test => test.creator === currentUser.username);
+
+            if (userTests.length === 0) {
+                testsList.innerHTML = '<p>У вас пока нет тестов.</p>';
+                return;
+            }
+
+            userTests.forEach((test, index) => {
+                const testItem = document.createElement('div');
+                testItem.className = 'test-item';
+                testItem.innerHTML = `
+                    <div>
+                        <strong>${test.title}</strong> (${test.questions.length} вопросов)
+                    </div>
+                    <div class="test-actions">
+                        <button class="edit-test" data-index="${index}">Доработать</button>
+                        <button class="take-test" data-index="${index}">Пройти</button>
+                    </div>
+                `;
+                testsList.appendChild(testItem);
+            });
+
+            // Добавляем обработчики для кнопок
+            document.querySelectorAll('.edit-test').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const testIndex = e.target.getAttribute('data-index');
+                    editTest(testIndex);
+                });
+            });
+
+            document.querySelectorAll('.take-test').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const testIndex = e.target.getAttribute('data-index');
+                    takeTest(testIndex);
+                });
+            });
+        }
+
+        // Создание теста
+        document.getElementById('createTestBtn').addEventListener('click', () => {
+            document.getElementById('testCreationSection').style.display = 'block';
+            document.getElementById('testListSection').style.display = 'none';
+            document.getElementById('testPassingSection').style.display = 'none';
+            document.getElementById('testResultsSection').style.display = 'none';
+            document.getElementById('achievementsSection').style.display = 'none';
+
+            // Очищаем контейнер вопросов
+            document.getElementById('questionsContainer').innerHTML = '';
+
+            // Добавляем первый вопрос
+            addQuestionField();
+        });
+
+        // Добавление поля вопроса
+        document.getElementById('addQuestionBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            addQuestionField();
+        });
+
+        function addQuestionField() {
+            const questionsContainer = document.getElementById('questionsContainer');
+            const questionCount = questionsContainer.children.length;
+
+            if (questionCount >= 10) {
+                alert('Максимальное количество вопросов - 10!');
+                return;
+            }
+
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-item';
+            questionDiv.innerHTML = `
+                <h4>Вопрос ${questionCount + 1}</h4>
+                <input type="text" placeholder="Текст вопроса" class="question-text">
+                <input type="text" placeholder="Правильный ответ" class="correct-answer">
+                <button class="remove-question" style="background-color: #e74a3b; margin-top: 10px;">Удалить</button>
+            `;
+
+            questionsContainer.appendChild(questionDiv);
+
+            // Добавляем обработчик для кнопки удаления
+            questionDiv.querySelector('.remove-question').addEventListener('click', () => {
+                questionDiv.remove();
+                // Обновляем нумерацию вопросов
+                updateQuestionNumbers();
+            });
+        }
+
+        function updateQuestionNumbers() {
+            const questions = document.querySelectorAll('.question-item');
+            questions.forEach((question, index) => {
+                question.querySelector('h4').textContent = `Вопрос ${index + 1}`;
+            });
+        }
+
+        // Сохранение теста
+        document.getElementById('saveTestBtn').addEventListener('click', () => {
+            const title = document.getElementById('testTitle').value.trim();
+
+            if (!title) {
+                alert('Введите название теста!');
+                return;
+            }
+
+            const questions = [];
+            const questionItems = document.querySelectorAll('.question-item');
+
+            if (questionItems.length === 0) {
+                alert('Добавьте хотя бы один вопрос!');
+                return;
+            }
+
+            questionItems.forEach(item => {
+                const questionText = item.querySelector('.question-text').value.trim();
+                const correctAnswer = item.querySelector('.correct-answer').value.trim();
+
+                if (questionText && correctAnswer) {
+                    questions.push({
+                        text: questionText,
+                        correctAnswer: correctAnswer
+                    });
+                }
+            });
+
+            if (questions.length === 0) {
+                alert('Добавьте хотя бы один вопрос с ответом!');
+                return;
+            }
+
+            const newTest = {
+                title,
+                questions,
+                creator: currentUser.username
+            };
+
+            tests.push(newTest);
+            localStorage.setItem('tests', JSON.stringify(tests));
+
+            alert('Тест успешно сохранен!');
+
+            // Очищаем форму
+            document.getElementById('testTitle').value = '';
+            document.getElementById('questionsContainer').innerHTML = '';
+
+            // Показываем список тестов
+            document.getElementById('testCreationSection').style.display = 'none';
+            document.getElementById('testListSection').style.display = 'block';
+
+            // Обновляем список тестов
+            loadUserTests();
+        });
+
+        // Редактирование теста
+        function editTest(testIndex) {
+            currentTest = tests[testIndex];
+
+            // Заполняем форму редактирования
+            document.getElementById('testTitle').value = currentTest.title;
+
+            const questionsContainer = document.getElementById('questionsContainer');
+            questionsContainer.innerHTML = '';
+
+            currentTest.questions.forEach((question, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question-item';
+                questionDiv.innerHTML = `
+                    <h4>Вопрос ${index + 1}</h4>
+                    <input type="text" placeholder="Текст вопроса" class="question-text" value="${question.text}">
+                    <input type="text" placeholder="Правильный ответ" class="correct-answer" value="${question.correctAnswer}">
+                    <button class="remove-question" style="background-color: #e74a3b; margin-top: 10px;">Удалить</button>
+                `;
+
+                questionsContainer.appendChild(questionDiv);
+
+                // Добавляем обработчик для кнопки удаления
+                questionDiv.querySelector('.remove-question').addEventListener('click', () => {
+                    questionDiv.remove();
+                    updateQuestionNumbers();
+                });
+            });
+
+            // Показываем раздел создания/редактирования теста
+            document.getElementById('testCreationSection').style.display = 'block';
+            document.getElementById('testListSection').style.display = 'none';
+            document.getElementById('testPassingSection').style.display = 'none';
+            document.getElementById('testResultsSection').style.display = 'none';
+            document.getElementById('achievementsSection').style.display = 'none';
+
+            // Обновляем кнопку сохранения
+            const saveBtn = document.getElementById('saveTestBtn');
+            saveBtn.textContent = 'Обновить тест';
+            saveBtn.onclick = function() {
+                updateTest(testIndex);
+            };
+        }
+
+        // Обновление теста
+        function updateTest(testIndex) {
+            const title = document.getElementById('testTitle').value.trim();
+
+            if (!title) {
+                alert('Введите название теста!');
+                return;
+            }
+
+            const questions = [];
+            const questionItems = document.querySelectorAll('.question-item');
+
+            if (questionItems.length === 0) {
+                alert('Добавьте хотя бы один вопрос!');
+                return;
+            }
+
+            questionItems.forEach(item => {
+                const questionText = item.querySelector('.question-text').value.trim();
+                const correctAnswer = item.querySelector('.correct-answer').value.trim();
+
+                if (questionText && correctAnswer) {
+                    questions.push({
+                        text: questionText,
+                        correctAnswer: correctAnswer
+                    });
+                }
+            });
+
+            if (questions.length === 0) {
+                alert('Добавьте хотя бы один вопрос с ответом!');
+                return;
+            }
+
+            // Обновляем тест
+            tests[testIndex] = {
+                title,
+                questions,
+                creator: currentUser.username
+            };
+
+            localStorage.setItem('tests', JSON.stringify(tests));
+
+            alert('Тест успешно обновлен!');
+
+            // Очищаем форму
+            document.getElementById('testTitle').value = '';
+            document.getElementById('questionsContainer').innerHTML = '';
+
+            // Восстанавливаем оригинальную кнопку
+            const saveBtn = document.getElementById('saveTestBtn');
+            saveBtn.textContent = 'Сохранить тест';
+            saveBtn.onclick = function() {
+                document.getElementById('saveTestBtn').click();
+            };
+
+            // Показываем список тестов
+            document.getElementById('testCreationSection').style.display = 'none';
+            document.getElementById('testListSection').style.display = 'block';
+
+            // Обновляем список тестов
+            loadUserTests();
+        }
+
+        // Прохождение теста
+        function takeTest(testIndex) {
+            currentTest = tests[testIndex];
+            currentQuestionIndex = 0;
+            userAnswers = new Array(currentTest.questions.length).fill('');
+
+            document.getElementById('currentTestTitle').textContent = currentTest.title;
+            document.getElementById('testListSection').style.display = 'none';
+            document.getElementById('testPassingSection').style.display = 'block';
+
+            showQuestion(0);
+        }
+
+        // Показать вопрос
+        function showQuestion(index) {
+            if (index < 0 || index >= currentTest.questions.length) return;
+
+            currentQuestionIndex = index;
+            const question = currentTest.questions[index];
+
+            document.getElementById('currentQuestion').textContent = `Вопрос ${index + 1}: ${question.text}`;
+            document.getElementById('userAnswer').value = userAnswers[index] || '';
+
+            // Управление видимостью кнопок
+            document.getElementById('prevQuestionBtn').style.display = index > 0 ? 'block' : 'none';
+
+            if (index === currentTest.questions.length - 1) {
+                document.getElementById('nextQuestionBtn').style.display = 'none';
+                document.getElementById('finishTestBtn').style.display = 'block';
+            } else {
+                document.getElementById('nextQuestionBtn').style.display = 'block';
+                document.getElementById('finishTestBtn').style.display = 'none';
+            }
+        }
+
+        // Навигация по вопросам
+        document.getElementById('prevQuestionBtn').addEventListener('click', () => {
+            saveAnswer();
+            showQuestion(currentQuestionIndex - 1);
+        });
+
+        document.getElementById('nextQuestionBtn').addEventListener('click', () => {
+            saveAnswer();
+            showQuestion(currentQuestionIndex + 1);
+        });
+
+        // Сохранение ответа
+        function saveAnswer() {
+            userAnswers[currentQuestionIndex] = document.getElementById('userAnswer').value.trim();
+        }
+
+        // Завершение теста
+        document.getElementById('finishTestBtn').addEventListener('click', () => {
+            saveAnswer();
+            finishTest();
+        });
+
+        // Обработка завершения теста
+        function finishTest() {
+            let correctCount = 0;
+            const results = [];
+
+            for (let i = 0; i < currentTest.questions.length; i++) {
+                const isCorrect = userAnswers[i].toLowerCase() === currentTest.questions[i].correctAnswer.toLowerCase();
+                if (isCorrect) correctCount++;
+
+                results.push({
+                    question: currentTest.questions[i].text,
+                    userAnswer: userAnswers[i],
+                    correctAnswer: currentTest.questions[i].correctAnswer,
+                    isCorrect: isCorrect
+                });
+            }
+
+            const percentage = Math.round((correctCount / currentTest.questions.length) * 100);
+
+            // Вычисляем количество звезд в зависимости от процента правильных ответов
+            let earnedStars = 0;
+            if (percentage >= 90) earnedStars = 3;
+            else if (percentage >= 70) earnedStars = 2;
+            else if (percentage >= 50) earnedStars = 1;
+
+            // Обновляем звезды пользователя
+            const userIndex = users.findIndex(u => u.username === currentUser.username);
+            if (userIndex !== -1) {
+                users[userIndex].stars += earnedStars;
+                currentUser = users[userIndex];
+
+                // Проверяем достижения
+                checkAchievements();
+
+                localStorage.setItem('users', JSON.stringify(users));
+                document.getElementById('totalStars').textContent = currentUser.stars;
+            }
+
+            // Показываем результаты
+            document.getElementById('testPassingSection').style.display = 'none';
+            document.getElementById('testResultsSection').style.display = 'block';
+
+            document.getElementById('resultPercentage').textContent = `${percentage}%`;
+            document.getElementById('earnedStars').textContent = earnedStars;
+
+            const resultDetails = document.getElementById('resultDetails');
+            resultDetails.innerHTML = '<h4>Детализация результатов:</h4>';
+
+            results.forEach((result, index) => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `question-item ${result.isCorrect ? 'success-message' : 'error-message'}`;
+                resultDiv.innerHTML = `
+                    <p><strong>Вопрос ${index + 1}:</strong> ${result.question}</p>
+                    <p>Ваш ответ: ${result.userAnswer || 'Нет ответа'}</p>
+                    <p>Правильный ответ: ${result.correctAnswer}</p>
+                `;
+                resultDetails.appendChild(resultDiv);
+            });
+        }
+
+        // Проверка достижений
+        function checkAchievements() {
+            const userIndex = users.findIndex(u => u.username === currentUser.username);
+            if (userIndex === -1) return;
+
+            const user = users[userIndex];
+            const achievements = user.achievements || [];
+
+            // Определяем ранг на основе количества звезд
+            let newRank = user.rank;
+            if (user.stars >= 50 && !achievements.includes('Мастер')) {
+                newRank = 'Мастер';
+                achievements.push('Мастер');
+                alert('Поздравляем! Вы достигли звания Мастер!');
+            } else if (user.stars >= 30 && !achievements.includes('Эксперт')) {
+                newRank = 'Эксперт';
+                achievements.push('Эксперт');
+                alert('Поздравляем! Вы достигли звания Эксперт!');
+            } else if (user.stars >= 15 && !achievements.includes('Ученик')) {
+                newRank = 'Ученик';
+                achievements.push('Ученик');
+                alert('Поздравляем! Вы достигли звания Ученик!');
+            } else if (user.stars >= 1 && !achievements.includes('Новичок')) {
+                newRank = 'Новичок';
+                achievements.push('Новичок');
+                alert('Поздравляем! Вы достигли звания Новичок!');
+            }
+
+            // Обновляем пользователя
+            users[userIndex].rank = newRank;
+            users[userIndex].achievements = achievements;
+            currentUser = users[userIndex];
+
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        // Возврат в профиль
+        document.getElementById('backToProfileBtn').addEventListener('click', () => {
+            document.getElementById('testResultsSection').style.display = 'none';
+            document.getElementById('testListSection').style.display = 'block';
+            loadUserTests();
+        });
+
+        // Показать достижения
+        document.getElementById('showAchievementsBtn').addEventListener('click', () => {
+            document.getElementById('testListSection').style.display = 'none';
+            document.getElementById('achievementsSection').style.display = 'block';
+
+            document.getElementById('currentRank').textContent = currentUser.rank;
+
+            const achievementsList = document.getElementById('achievementsList');
+            achievementsList.innerHTML = '';
+
+            if (!currentUser.achievements || currentUser.achievements.length === 0) {
+                achievementsList.innerHTML = '<p>У вас пока нет достижений.</p>';
+                return;
+            }
+
+            currentUser.achievements.forEach(achievement => {
+                const achievementItem = document.createElement('div');
+                achievementItem.className = 'achievement-item';
+                achievementItem.innerHTML = `
+                    <span class="rank-badge">${achievement}</span>
+                    <span>Достигнуто</span>
+                `;
+                achievementsList.appendChild(achievementItem);
+            });
+        });
+
+        // Возврат из достижений
+        document.getElementById('backFromAchievementsBtn').addEventListener('click', () => {
+            document.getElementById('achievementsSection').style.display = 'none';
+            document.getElementById('testListSection').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
