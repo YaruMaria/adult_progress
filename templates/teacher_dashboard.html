@@ -1,133 +1,479 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Главная - Образовательная платформа</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #4361ee;
-            --primary-light: #e0e7ff;
-            --primary-dark: #3a56d4;
-            --dark: #1e293b;
-            --light: #f8fafc;
-        }
+{% extends "base.html" %}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
+{% block title %}Панель учителя - EduProgress{% endblock %}
 
-        body {
-            background: var(--light);
-            min-height: 100vh;
-            padding: 2rem;
-        }
+{% block content %}
+<div class="teacher-dashboard">
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+    <!-- Декоративные цветочки в углах -->
+    <div class="decor-flower top-left" aria-hidden="true">
+      <svg width="80" height="80" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" >
+        <circle cx="32" cy="32" r="30" fill="#F9A825" opacity="0.3"/>
+        <path d="M32 12 L36 28 L52 28 L38 36 L42 52 L32 42 L22 52 L26 36 L12 28 L28 28 L32 12Z" fill="#E26B00" opacity="0.6"/>
+      </svg>
+    </div>
 
-        header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
+    <div class="decor-flower bottom-right" aria-hidden="true">
+      <svg width="100" height="100" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" >
+        <circle cx="32" cy="32" r="30" fill="#F9A825" opacity="0.2"/>
+        <path d="M32 12 L36 28 L52 28 L38 36 L42 52 L32 42 L22 52 L26 36 L12 28 L28 28 L32 12Z" fill="#E26B00" opacity="0.4"/>
+      </svg>
+    </div>
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--primary-dark);
-            margin-bottom: 1rem;
-        }
-
-        .students-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .student-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .student-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-5px);
-        }
-
-        .student-name {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 0.5rem;
-        }
-
-        .add-student-card {
-            background: var(--primary-light);
-            border: 2px dashed var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            text-decoration: none;
-            color: var(--primary-dark);
-        }
-
-        .add-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #666;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Добро пожаловать, {{ session.username }}!</h1>
-            <p>Выберите ученика для работы или добавьте нового</p>
-        </header>
-
-        <div class="students-grid">
-            {% for student in students %}
-            <div class="student-card" onclick="window.location.href='{{ url_for('student_dashboard', student_id=student.id) }}'">
-                <h3 class="student-name">{{ student.full_name }}</h3>
-                <p>Логин: {{ student.username }}</p>
-                <p>Начал: {{ student.start_date }}</p>
-                <p>Уровень: {{ student.initial_level }}</p>
-            </div>
-            {% endfor %}
-
-            <a href="{{ url_for('teacher_students') }}" class="student-card add-student-card">
-                <div class="add-icon">
-                    <i class="fas fa-plus-circle"></i>
+    <!-- Хедер -->
+    <header class="header">
+        <div class="container header-container">
+            <div class="profile-section">
+                <div class="avatar-circle">
+                    {{ session.username[0]|upper }}
                 </div>
-                <h3>Добавить ученика</h3>
+                <div class="welcome-text">
+                    <h1>Привет, {{ session.username }}!</h1>
+                    <p>Управляйте учебным процессом с лёгкостью</p>
+                </div>
+            </div>
+            <a href="{{ url_for('teacher_students') }}" class="btn btn-primary btn-large" aria-label="Добавить ученика">
+                <i class="fas fa-plus" aria-hidden="true"></i> Добавить ученика
             </a>
         </div>
+    </header>
 
-        {% if not students %}
-        <div class="empty-state">
-            <h3>У вас пока нет учеников</h3>
-            <p>Добавьте первого ученика, чтобы начать работу</p>
-            <a href="{{ url_for('teacher_students') }}" style="color: var(--primary);">Добавить ученика</a>
-        </div>
-        {% endif %}
-    </div>
-</body>
-</html>
+    <!-- Основной контент с 3 колонками -->
+    <main class="container main-grid">
+
+        <!-- Левая колонка: Мои ученики -->
+        <section class="card students-card" aria-label="Список учеников">
+            <h2 class="section-title">Мои ученики <span class="badge">{{ students|length }}</span></h2>
+
+            {% if students %}
+            <ul class="students-list">
+                {% for student in students %}
+                <li class="student-item">
+                    <div class="student-avatar-circle" aria-hidden="true">{{ student.full_name[0]|upper }}</div>
+                    <div class="student-info">
+                        <h3>{{ student.full_name }}</h3>
+                        <p>@{{ student.username }}</p>
+                    </div>
+                    <div class="student-stars" aria-label="Звёзды ученика">
+                        <i class="fas fa-star" aria-hidden="true"></i> {{ student.stars }}
+                    </div>
+                    <a href="{{ url_for('student_dashboard', student_id=student.id) }}" class="btn btn-outline" aria-label="Профиль ученика {{ student.full_name }}">Профиль</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-users empty-icon" aria-hidden="true"></i>
+                <p>Учеников пока нет. Добавьте первого!</p>
+                <a href="{{ url_for('teacher_students') }}" class="btn btn-primary">Добавить ученика</a>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Средняя колонка: Статистика -->
+        <section class="card stats-card" aria-label="Статистика учителя">
+            <h2 class="section-title">Статистика</h2>
+            <ul class="stats-list">
+                <li><span class="stat-number">{{ total_students }}</span> Всего учеников</li>
+                <li><span class="stat-number">{{ total_stars }}</span> Всего звёзд</li>
+                <li><span class="stat-number">{{ test_count }}</span> Создано тестов</li>
+                <li><span class="stat-number">{{ completed_tests }}</span> Пройдено тестов</li>
+            </ul>
+        </section>
+
+        <!-- Правая колонка: Быстрые действия -->
+        <section class="card actions-card" aria-label="Быстрые действия учителя">
+            <h2 class="section-title">Быстрые действия</h2>
+            <nav class="actions-nav">
+                <a href="{{ url_for('create_test') }}" class="action-btn" aria-label="Создать тест">
+                    <i class="fas fa-plus-circle" aria-hidden="true"></i> Создать тест
+                </a>
+                <a href="{{ url_for('tests_list') }}" class="action-btn" aria-label="Все тесты">
+                    <i class="fas fa-list" aria-hidden="true"></i> Все тесты
+                </a>
+                <a href="{{ url_for('achievements') }}" class="action-btn" aria-label="Достижения">
+                    <i class="fas fa-trophy" aria-hidden="true"></i> Достижения
+                </a>
+            </nav>
+        </section>
+
+    </main>
+
+</div>
+
+<style>
+/* --- Общие стили --- */
+
+body {
+    background-color: #A8C7D9;
+    font-family: 'Open Sans', sans-serif;
+    color: #244A9C;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* --- Декоративные цветочки --- */
+.decor-flower {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.top-left {
+  top: 10px;
+  left: 10px;
+  opacity: 0.3;
+}
+
+.bottom-right {
+  bottom: 10px;
+  right: 10px;
+  opacity: 0.2;
+}
+
+/* --- Хедер --- */
+.header {
+    background: #F9F2E7;
+    padding: 2rem 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-radius: 0 0 20px 20px;
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 1;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.avatar-circle {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #E26B00, #F9A825);
+    border-radius: 50%;
+    color: white;
+    font-weight: 700;
+    font-size: 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(226,107,0,0.5);
+    font-family: 'Fredoka One', cursive;
+}
+
+.welcome-text h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.5rem;
+    margin: 0 0 0.3rem 0;
+}
+
+.welcome-text p {
+    font-size: 1.2rem;
+    margin: 0;
+    color: #244A9C;
+}
+
+/* --- Кнопки --- */
+.btn {
+    padding: 0.8rem 1.8rem;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    border: none;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 15px rgba(226,107,0,0.4);
+    user-select: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #E26B00, #F9A825);
+    color: white;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background: linear-gradient(135deg, #F9A825, #E26B00);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(249,168,37,0.7);
+    outline: none;
+}
+
+.btn-large {
+    font-size: 1.3rem;
+    padding: 1rem 2.4rem;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #244A9C;
+    color: #244A9C;
+    border-radius: 30px;
+    padding: 0.6rem 1.6rem;
+    font-weight: 600;
+}
+
+.btn-outline:hover,
+.btn-outline:focus {
+    background: #244A9C;
+    color: white;
+    outline: none;
+}
+
+/* --- Основной грид --- */
+.main-grid {
+    display: grid;
+    grid-template-columns: 1.8fr 1.2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 4rem;
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 1024px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Карточки --- */
+.card {
+    background: #F9F2E7;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 20px rgba(36, 74, 156, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+}
+
+/* --- Заголовки секций --- */
+.section-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    color: #244A9C;
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* --- Значок количества --- */
+.badge {
+    background: #E26B00;
+    color: white;
+    padding: 0.3rem 1rem;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 4px 10px rgba(226,107,0,0.5);
+}
+
+/* --- Список учеников --- */
+.students-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 480px;
+    overflow-y: auto;
+}
+
+.student-item {
+    background: white;
+    border-radius: 15px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 12px rgba(36,74,156,0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.student-item:hover,
+.student-item:focus-within {
+    box-shadow: 0 8px 20px rgba(36,74,156,0.25);
+}
+
+.student-avatar-circle {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #244A9C, #3B6DD1);
+    border-radius: 50%;
+    color: white;
+    font-weight: 700;
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Fredoka One', cursive;
+    flex-shrink: 0;
+}
+
+.student-info h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.student-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #4a6fa5;
+}
+
+.student-stars {
+    margin-left: auto;
+    color: #E26B00;
+    font-weight: 700;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.student-stars i {
+    color: #E26B00;
+}
+
+/* --- Пустое состояние --- */
+.empty-state {
+    text-align: center;
+    color: #244A9C;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #E26B00;
+}
+
+/* --- Статистика --- */
+.stats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.stats-list li {
+    background: white;
+    border-radius: 15px;
+    padding: 1rem 1.5rem;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #244A9C;
+    box-shadow: 0 4px 12px rgba(36,74,156,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-number {
+    background: #244A9C;
+    color: white;
+    font-weight: 700;
+    font-size: 1.3rem;
+    padding: 0.3rem 1rem;
+    border-radius: 30px;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* --- Быстрые действия --- */
+.actions-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.action-btn {
+    background: #E26B00;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    text-decoration: none;
+    box-shadow: 0 6px 18px rgba(226,107,0,0.5);
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    user-select: none;
+}
+
+.action-btn i {
+    font-size: 1.4rem;
+}
+
+.action-btn:hover,
+.action-btn:focus {
+    background: #F9A825;
+    transform: translateX(5px);
+    outline: none;
+}
+
+/* --- Скроллбар для списка учеников --- */
+.students-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.students-list::-webkit-scrollbar-track {
+    background: #F9F6F1;
+    border-radius: 10px;
+}
+
+.students-list::-webkit-scrollbar-thumb {
+    background: #E26B00;
+    border-radius: 10px;
+}
+
+.students-list::-webkit-scrollbar-thumb:hover {
+    background: #F9A825;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Плавное появление карточек
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, idx) => {
+        card.style.opacity = 0;
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            card.style.opacity = 1;
+            card.style.transform = 'translateY(0)';
+        }, idx * 150);
+    });
+});
+</script>
+
+{% endblock %}
+

@@ -308,38 +308,50 @@ def teacher_dashboard():
     cursor = conn.cursor()
 
     try:
-        # Проверяем существование столбцов
-        cursor.execute("PRAGMA table_info(users)")
-        columns = [column[1] for column in cursor.fetchall()]
+        # Получаем учеников с преобразованием в словари
+        cursor.execute("""
+            SELECT id, username, full_name, stars, current_rank, 
+                   initial_level, start_date, goal 
+            FROM users 
+            WHERE role = 'student' AND teacher_id = ?
+            ORDER BY created_date DESC
+        """, (session['user_id'],))
 
-        # Формируем запрос в зависимости от наличия столбцов
-        if 'full_name' in columns and 'teacher_id' in columns:
-            cursor.execute("""
-                SELECT id, username, full_name, start_date, initial_level 
-                FROM users 
-                WHERE role = 'student' AND teacher_id = ?
-                ORDER BY created_date DESC
-            """, (session['user_id'],))
-        else:
-            # Если столбцы еще не добавлены, используем базовый запрос
-            cursor.execute("""
-                SELECT id, username, username as full_name, 
-                       'Не указана' as start_date, 'Не указан' as initial_level 
-                FROM users 
-                WHERE role = 'student'
-                ORDER BY id DESC
-            """)
+        students = [dict(row) for row in cursor.fetchall()]
 
-        students = cursor.fetchall()
+        # Получаем статистику для dashboard
+        cursor.execute("SELECT COUNT(*) as total FROM users WHERE role = 'student' AND teacher_id = ?",
+                       (session['user_id'],))
+        total_students = cursor.fetchone()['total']
+
+        cursor.execute("SELECT SUM(stars) as total_stars FROM users WHERE role = 'student' AND teacher_id = ?",
+                       (session['user_id'],))
+        total_stars = cursor.fetchone()['total_stars'] or 0
+
+        cursor.execute("SELECT COUNT(*) as test_count FROM tests WHERE creator_id = ?",
+                       (session['user_id'],))
+        test_count = cursor.fetchone()['test_count']
+
+        cursor.execute("SELECT COUNT(*) as completed FROM test_results")
+        completed_tests = cursor.fetchone()['completed']
 
     except sqlite3.Error as e:
-        print(f"Ошибка при получении учеников: {e}")
+        print(f"Ошибка при получении данных: {e}")
         students = []
+        total_students = 0
+        total_stars = 0
+        test_count = 0
+        completed_tests = 0
 
     finally:
         conn.close()
 
-    return render_template("teacher_dashboard.html", students=students)
+    return render_template("teacher_dashboard.html",
+                           students=students,
+                           total_students=total_students,
+                           total_stars=total_stars,
+                           test_count=test_count,
+                           completed_tests=completed_tests)
 
 
 @app.route("/tests")

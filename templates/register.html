@@ -1,274 +1,97 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --primary-dark: #1a252f;
-            --accent: #3498db;
-            --white: #FFFFFF;
-            --light: #ecf0f1;
-            --dark: #2c3e50;
-            --error: #e74c3c;
-            --success: #2ecc71;
-        }
+{% extends "base.html" %}
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Roboto', sans-serif;
-        }
+{% block title %}Регистрация - EduProgress{% endblock %}
 
-        body {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: var(--light);
-            padding: 20px;
-        }
+{% block navbar %}{% endblock %}
 
-        .auth-container {
-            width: 100%;
-            max-width: 450px;
-            background: var(--white);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .auth-header {
-            background: var(--primary);
-            color: var(--white);
-            padding: 24px;
-            text-align: center;
-        }
-
-        .auth-header h1 {
-            font-size: 24px;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-
-        .auth-body {
-            padding: 24px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--dark);
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-            font-size: 15px;
-            transition: border-color 0.2s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .role-selection {
-            display: flex;
-            gap: 15px;
-            margin: 20px 0;
-        }
-
-        .role-option {
-            flex: 1;
-            padding: 15px;
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .role-option.selected {
-            border-color: var(--accent);
-            background-color: rgba(52, 152, 219, 0.1);
-        }
-
-        .role-option i {
-            font-size: 20px;
-            margin-bottom: 8px;
-            display: block;
-            color: var(--primary);
-        }
-
-        .role-option.selected i {
-            color: var(--accent);
-        }
-
-        input[type="radio"] {
-            display: none;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary);
-            color: var(--white);
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .btn:hover {
-            background: var(--primary-dark);
-        }
-
-        .auth-footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 14px;
-            color: #7f8c8d;
-            border-top: 1px solid var(--light);
-        }
-
-        .auth-footer a {
-            color: var(--accent);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .error-message {
-            color: var(--error);
-            font-size: 13px;
-            margin-top: 5px;
-            font-weight: 500;
-        }
-
-        .alert {
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-        }
-
-        .alert-error {
-            background: rgba(231, 76, 60, 0.1);
-            color: var(--error);
-            border-left: 4px solid var(--error);
-        }
-
-        .alert-success {
-            background: rgba(46, 204, 113, 0.1);
-            color: var(--success);
-            border-left: 4px solid var(--success);
-        }
-
-        .alert i {
-            margin-right: 10px;
-        }
-    </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <div class="auth-container">
-        <div class="auth-header">
-            <h1>Регистрация</h1>
-            <p>Создайте новый аккаунт</p>
-        </div>
-
-        <div class="auth-body">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"></i>
-                            <span>{{ message }}</span>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+{% block content %}
+<div class="row justify-content-center min-vh-100 align-items-center py-5">
+    <div class="col-xl-5 col-lg-6 col-md-7">
+        <div class="glass-card p-5 animate-fade-in">
+            <div class="text-center mb-5">
+                <div class="nav-brand" style="font-size: 3rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-user-plus"></i> Регистрация
+                </div>
+                <p class="text-muted">Создайте новый аккаунт для начала обучения</p>
+            </div>
 
             <form method="POST" action="{{ url_for('register') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <div class="form-group">
-                    <label for="username" class="form-label">Логин</label>
-                    <input type="text" id="username" name="username" class="form-input"
-                           placeholder="Придумайте логин" required minlength="3"
-                           value="{{ username if username }}">
-                    {% if 'username' in form_errors %}
-                        <span class="error-message">{{ form_errors.username }}</span>
-                    {% endif %}
-                </div>
-
-                <div class="form-group">
-                    <label for="password" class="form-label">Пароль</label>
-                    <input type="password" id="password" name="password" class="form-input"
-                           placeholder="Не менее 6 символов" required minlength="6">
-                    {% if 'password' in form_errors %}
-                        <span class="error-message">{{ form_errors.password }}</span>
-                    {% endif %}
-                </div>
-
-                <div class="form-group">
-                    <label for="confirm_password" class="form-label">Подтвердите пароль</label>
-                    <input type="password" id="confirm_password" name="confirm_password"
-                           class="form-input" placeholder="Повторите пароль" required>
-                    {% if 'confirm_password' in form_errors %}
-                        <span class="error-message">{{ form_errors.confirm_password }}</span>
-                    {% endif %}
-                </div>
-
-                <div class="role-selection">
-                    <label class="role-option {% if request.form.get('role') == 'teacher' %}selected{% endif %}">
-                        <input type="radio" name="role" value="teacher" {% if request.form.get('role') == 'teacher' %}checked{% endif %} required>
-                        <i class="fas fa-chalkboard-teacher"></i>
-                        Учитель
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark mb-2">
+                        <i class="fas fa-at me-2 text-primary"></i>Логин
                     </label>
-
-                    <label class="role-option {% if request.form.get('role') == 'parent' %}selected{% endif %}">
-                        <input type="radio" name="role" value="parent" {% if request.form.get('role') == 'parent' %}checked{% endif %} required>
-                        <i class="fas fa-user-friends"></i>
-                        Родитель
-                    </label>
+                    <input type="text" class="form-control py-3" name="username"
+                           placeholder="Придумайте уникальный логин" required minlength="3">
                 </div>
 
-                <button type="submit" class="btn">Зарегистрироваться</button>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark mb-2">
+                            <i class="fas fa-key me-2 text-primary"></i>Пароль
+                        </label>
+                        <input type="password" class="form-control py-3" name="password"
+                               placeholder="Не менее 6 символов" required minlength="6">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-dark mb-2">
+                            <i class="fas fa-check-circle me-2 text-primary"></i>Подтверждение
+                        </label>
+                        <input type="password" class="form-control py-3" name="confirm_password"
+                               placeholder="Повторите пароль" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-dark mb-3">
+                        <i class="fas fa-user-tag me-2 text-primary"></i>Выберите роль
+                    </label>
+                    <div class="d-grid gap-3">
+                        <div class="btn-group btn-group-lg" role="group">
+                            <input type="radio" class="btn-check" name="role" value="student" id="role-student" checked>
+                            <label class="btn btn-outline-primary py-3" for="role-student">
+                                <i class="fas fa-user-graduate me-2"></i>Ученик
+                            </label>
+
+                            <input type="radio" class="btn-check" name="role" value="teacher" id="role-teacher">
+                            <label class="btn btn-outline-primary py-3" for="role-teacher">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>Учитель
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-gradient w-100 py-3 fw-semibold mt-2">
+                    <i class="fas fa-rocket me-2"></i>Начать обучение
+                </button>
             </form>
-        </div>
 
-        <div class="auth-footer">
-            Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a>
+            <div class="text-center mt-4 pt-3 border-top">
+                <p class="text-muted mb-0">
+                    Уже есть аккаунт?
+                    <a href="{{ url_for('login') }}" class="text-decoration-none fw-semibold text-gradient">
+                        Войти в систему
+                    </a>
+                </p>
+            </div>
         </div>
     </div>
+</div>
 
-    <script>
-        document.querySelectorAll('.role-option').forEach(option => {
-            option.addEventListener('click', function() {
-                document.querySelectorAll('.role-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                this.classList.add('selected');
-                this.querySelector('input[type="radio"]').checked = true;
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleButtons = document.querySelectorAll('.btn-check');
+    roleButtons.forEach(btn => {
+        btn.addEventListener('change', function() {
+            document.querySelectorAll('.btn').forEach(label => {
+                label.classList.remove('active', 'btn-primary');
+                label.classList.add('btn-outline-primary');
             });
+            this.nextElementSibling.classList.add('active', 'btn-primary');
+            this.nextElementSibling.classList.remove('btn-outline-primary');
         });
-    </script>
-</body>
-</html>
+    });
+});
+</script>
+{% endblock %}
