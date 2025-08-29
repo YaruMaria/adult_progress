@@ -3,95 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Журнал успеваемости - Образовательная платформа</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Журнал успеваемости - EduProgress</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary: #4361ee;
-            --primary-light: #e0e7ff;
-            --primary-lighter: #f5f7ff;
-            --primary-dark: #3a56d4;
-            --secondary: #7b2cbf;
-            --dark: #1e293b;
-            --darker: #0f172a;
-            --light: #f8fafc;
-            --lighter: #ffffff;
-            --gray: #94a3b8;
-            --gray-light: #e2e8f0;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
+            --primary: #A5810A;
+            --primary-dark: #7A833D;
+            --secondary: #4C4F3F;
+            --light: #FAF7EA;
+            --lighter: #EBE8D2;
+            --dark: #4C4F3F;
+            --darker: #3E3A09;
+            --success: #7A833D;
+            --danger: #8B4513;
+            --warning: #C7AE2B;
+            --gray: #7C7C53;
+            --gray-light: #E7E7D9;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Open Sans', sans-serif;
         }
 
         body {
-            background: linear-gradient(135deg, var(--primary-lighter), var(--lighter));
+            background-image: url('https://i.pinimg.com/1200x/94/86/c9/9486c96860a224d02a528a949416adf9.jpg');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
             color: var(--dark);
             line-height: 1.6;
-            position: relative;
-            overflow-x: hidden;
             min-height: 100vh;
+            position: relative;
         }
 
-        .bubbles {
+        body::before {
+            content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(60, 62, 38, 0.58);
+            pointer-events: none;
             z-index: -1;
-            overflow: hidden;
-        }
-
-        .bubble {
-            position: absolute;
-            bottom: -150px;
-            background: radial-gradient(circle at center,
-                      rgba(123, 44, 191, 0.15) 0%,
-                      rgba(67, 97, 238, 0.1) 50%,
-                      transparent 70%);
-            border-radius: 50%;
-            animation: rise 15s infinite ease-in;
-            filter: blur(1.5px);
-            opacity: 0.8;
-            mix-blend-mode: overlay;
-        }
-
-        .bubble:nth-child(odd) {
-            background: radial-gradient(circle at center,
-                      rgba(67, 97, 238, 0.15) 0%,
-                      rgba(123, 44, 191, 0.1) 50%,
-                      transparent 70%);
-        }
-
-        @keyframes rise {
-            0% {
-                bottom: -150px;
-                transform: translateX(0) scale(0.8);
-                opacity: 0;
-            }
-            20% {
-                opacity: 0.8;
-            }
-            50% {
-                transform: translateX(100px) scale(1);
-            }
-            80% {
-                opacity: 0.6;
-            }
-            100% {
-                bottom: 120vh;
-                transform: translateX(-150px) scale(1.3);
-                opacity: 0;
-            }
         }
 
         .container {
@@ -101,66 +56,76 @@
             position: relative;
         }
 
+        /* Хедер */
         header {
+            background: rgba(235, 232, 210, 0.95);
+            color: var(--dark);
+            padding: 2rem 0;
+            box-shadow: 0 4px 15px rgba(72, 77, 55, 0.6);
+            border-radius: 28px 28px 0 0;
+            margin-bottom: 3rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .header-container {
+            width: 90%;
+            max-width: 1200px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 3rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(224, 231, 255, 0.6);
+            gap: 1rem;
         }
 
         h1 {
-            font-size: 2.4rem;
-            font-weight: 800;
-            color: var(--darker);
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            letter-spacing: -0.5px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #5E5F3E;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        /* Кнопки */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             padding: 0.85rem 2rem;
-            border-radius: 0.85rem;
+            border-radius: 30px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             border: none;
             text-decoration: none;
-            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.25);
             font-size: 1rem;
-            position: relative;
-            overflow: hidden;
+            gap: 0.5rem;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--warning));
+            color: var(--darker);
+            box-shadow: 0 6px 18px rgba(199, 174, 43, 0.8);
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-            transform: translateY(-3px);
-            box-shadow: 0 6px 16px rgba(67, 97, 238, 0.35);
+            background: linear-gradient(135deg, var(--warning), var(--primary));
+            box-shadow: 0 8px 24px rgba(199, 174, 43, 1);
+            transform: translateY(-2px);
         }
 
-        .btn-outline-primary {
+        .btn-outline {
             background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
+            border: 2px solid var(--secondary);
+            color: var(--secondary);
         }
 
-        .btn-outline-primary:hover {
-            background: var(--primary);
+        .btn-outline:hover {
+            background: var(--secondary);
             color: white;
         }
 
+        /* Статистика */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -169,12 +134,12 @@
         }
 
         .stat-card {
-            background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248, 250, 252, 0.98));
-            border-radius: 1.25rem;
+            background: rgba(250, 247, 234, 0.9);
+            border-radius: 20px;
             padding: 2rem;
             text-align: center;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(224, 231, 255, 0.8);
+            box-shadow: 0 8px 24px rgba(72, 77, 55, 0.15);
+            border: 1px solid rgba(224, 231, 255, 0.3);
         }
 
         .stat-number {
@@ -182,13 +147,15 @@
             font-weight: 800;
             color: var(--primary);
             margin-bottom: 0.5rem;
+            font-family: 'Fredoka One', cursive;
         }
 
         .stat-label {
             color: var(--gray);
-            font-weight: 500;
+            font-weight: 600;
         }
 
+        /* Список учеников */
         .students-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -197,16 +164,20 @@
         }
 
         .student-card {
-            background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248, 250, 252, 0.98));
-            border-radius: 1.25rem;
+            background: rgba(250, 247, 234, 0.9);
+            border-radius: 20px;
             padding: 2rem;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 8px 24px rgba(72, 77, 55, 0.15);
+            transition: all 0.3s ease;
             cursor: pointer;
-            border: 1px solid rgba(224, 231, 255, 0.8);
-            backdrop-filter: blur(6px);
+            border: 1px solid rgba(224, 231, 255, 0.3);
             position: relative;
             overflow: hidden;
+        }
+
+        .student-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(72, 77, 55, 0.25);
         }
 
         .student-card::before {
@@ -216,22 +187,12 @@
             left: 0;
             width: 4px;
             height: 100%;
-            background: linear-gradient(to bottom, var(--primary), var(--secondary));
-            transition: width 0.3s ease;
-        }
-
-        .student-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .student-card:hover::before {
-            width: 6px;
+            background: linear-gradient(to bottom, var(--primary), var(--primary-dark));
         }
 
         .student-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
         }
@@ -240,17 +201,16 @@
             font-size: 1.4rem;
             font-weight: 700;
             color: var(--darker);
-            flex: 1;
+            font-family: 'Fredoka One', cursive;
         }
 
         .student-level {
             padding: 0.4rem 1.2rem;
-            border-radius: 9999px;
+            border-radius: 20px;
             font-size: 0.95rem;
             font-weight: 600;
-            background: linear-gradient(135deg, var(--primary-light), rgba(224, 231, 255, 0.8));
+            background: rgba(224, 231, 255, 0.3);
             color: var(--primary-dark);
-            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.15);
         }
 
         .student-stats {
@@ -296,7 +256,7 @@
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
             border-radius: 4px;
             transition: width 0.3s ease;
         }
@@ -306,12 +266,13 @@
             gap: 1rem;
         }
 
+        /* Форма добавления */
         .add-student-form {
-            background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248, 250, 252, 0.95));
-            border-radius: 1.5rem;
+            background: rgba(250, 247, 234, 0.9);
+            border-radius: 20px;
             padding: 3rem;
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(224, 231, 255, 0.8);
+            box-shadow: 0 12px 30px rgba(72, 77, 55, 0.2);
+            border: 1px solid rgba(224, 231, 255, 0.3);
         }
 
         .form-title {
@@ -320,19 +281,7 @@
             margin-bottom: 2.5rem;
             color: var(--darker);
             text-align: center;
-            position: relative;
-        }
-
-        .form-title::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            border-radius: 3px;
+            font-family: 'Fredoka One', cursive;
         }
 
         .form-group {
@@ -350,7 +299,7 @@
             width: 100%;
             padding: 1rem 1.25rem;
             border: 1px solid var(--gray-light);
-            border-radius: 0.85rem;
+            border-radius: 15px;
             font-size: 1rem;
             transition: all 0.3s ease;
             background-color: rgba(255, 255, 255, 0.8);
@@ -359,11 +308,10 @@
         .form-input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
-            background-color: white;
+            box-shadow: 0 0 0 3px rgba(165, 129, 10, 0.15);
         }
 
-        /* Стили для сообщений flash */
+        /* Flash сообщения */
         .flash-messages {
             position: fixed;
             top: 20px;
@@ -374,20 +322,19 @@
         .flash-message {
             padding: 15px 20px;
             margin-bottom: 10px;
-            border-radius: 12px;
+            border-radius: 15px;
             color: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             animation: slideIn 0.3s ease-out;
             max-width: 350px;
-            backdrop-filter: blur(10px);
         }
 
         .flash-success {
-            background: linear-gradient(135deg, var(--success), #0da271);
+            background: linear-gradient(135deg, var(--success), #5E5F3E);
         }
 
         .flash-error {
-            background: linear-gradient(135deg, var(--danger), #dc2626);
+            background: linear-gradient(135deg, var(--danger), #A0522D);
         }
 
         @keyframes slideIn {
@@ -401,16 +348,16 @@
             }
         }
 
+        /* Адаптивность */
         @media (max-width: 768px) {
             .container {
                 padding: 1.5rem;
             }
 
-            header {
+            .header-container {
                 flex-direction: column;
-                align-items: flex-start;
                 gap: 1.5rem;
-                margin-bottom: 2rem;
+                text-align: center;
             }
 
             h1 {
@@ -430,24 +377,20 @@
                 padding: 2rem 1.5rem;
             }
 
-            .form-title {
-                font-size: 1.4rem;
+            .student-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .student-actions {
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Пузырьки с плавными градиентами -->
-    <div class="bubbles">
-        <div class="bubble" style="left: 10%; width: 80px; height: 80px; animation-delay: 0s;"></div>
-        <div class="bubble" style="left: 20%; width: 120px; height: 120px; animation-delay: 2s;"></div>
-        <div class="bubble" style="left: 50%; width: 100px; height: 100px; animation-delay: 4s;"></div>
-        <div class="bubble" style="left: 70%; width: 90px; height: 90px; animation-delay: 6s;"></div>
-        <div class="bubble" style="left: 30%; width: 110px; height: 110px; animation-delay: 8s;"></div>
-        <div class="bubble" style="left: 80%; width: 70px; height: 70px; animation-delay: 10s;"></div>
-    </div>
-
-    <!-- Контейнер для flash-сообщений -->
+    <!-- Flash сообщения -->
     <div class="flash-messages">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -458,19 +401,21 @@
         {% endwith %}
     </div>
 
-    <div class="container">
-        <header>
+    <header>
+        <div class="header-container">
             <h1>Журнал успеваемости</h1>
             <div>
-                <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline-primary me-2">
-                    <i class="fas fa-home me-2"></i>Главная
+                <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline">
+                    <i class="fas fa-home"></i>Главная
                 </a>
                 <a href="{{ url_for('logout') }}" class="btn btn-primary">
-                    <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                    <i class="fas fa-sign-out-alt"></i>Выйти
                 </a>
             </div>
-        </header>
+        </div>
+    </header>
 
+    <div class="container">
         <!-- Статистика -->
         <div class="stats-grid">
             <div class="stat-card">
@@ -492,7 +437,7 @@
         </div>
 
         <!-- Список учеников -->
-        <h2 style="margin-bottom: 2rem; color: var(--darker);">Мои ученики</h2>
+        <h2 style="margin-bottom: 2rem; color: var(--darker); font-family: 'Fredoka One', cursive;">Мои ученики</h2>
         <div class="students-grid">
             {% for student in students %}
             <div class="student-card" onclick="window.location.href='{{ url_for('student_details', student_id=student.id) }}'">
@@ -523,23 +468,21 @@
                 </div>
 
                 <div class="student-actions">
-                    <button class="btn btn-outline-primary btn-sm"
+                    <button class="btn btn-outline"
                             onclick="event.stopPropagation(); window.location.href='{{ url_for('student_details', student_id=student.id) }}'">
-                        <i class="fas fa-eye me-1"></i>Подробнее
+                        <i class="fas fa-eye"></i>Подробнее
                     </button>
-                    <button class="btn btn-outline-danger btn-sm"
+                    <button class="btn btn-outline"
                             onclick="event.stopPropagation(); confirmDelete({{ student.id }}, '{{ student.username }}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
             {% else %}
-            <div class="col-12">
-                <div class="text-center py-5">
-                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                    <h4>Пока нет учеников</h4>
-                    <p class="text-muted">Добавьте первого ученика, чтобы начать работу</p>
-                </div>
+            <div class="text-center py-5" style="grid-column: 1 / -1;">
+                <i class="fas fa-users fa-3x" style="color: var(--gray); margin-bottom: 1rem;"></i>
+                <h4 style="color: var(--darker); font-family: 'Fredoka One', cursive;">Пока нет учеников</h4>
+                <p style="color: var(--gray);">Добавьте первого ученика, чтобы начать работу</p>
             </div>
             {% endfor %}
         </div>
@@ -595,11 +538,11 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1.1rem;">
-                    <i class="fas fa-plus me-2"></i>Добавить ученика
+                    <i class="fas fa-plus"></i>Добавить ученика
                 </button>
 
-                <div class="mt-3 text-center">
-                    <small class="text-muted">
+                <div style="margin-top: 1rem; text-align: center;">
+                    <small style="color: var(--gray);">
                         * Поля, обязательные для заполнения. Пароль будет сгенерирован автоматически.
                     </small>
                 </div>
@@ -607,9 +550,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Автоматическое скрытие flash-сообщений через 5 секунд
+        // Автоматическое скрытие flash-сообщений
         document.addEventListener('DOMContentLoaded', function() {
             const flashMessages = document.querySelectorAll('.flash-message');
             flashMessages.forEach(message => {
@@ -648,3 +590,4 @@
     </script>
 </body>
 </html>
+
