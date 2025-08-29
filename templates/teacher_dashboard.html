@@ -2,29 +2,20 @@
 
 {% block title %}Панель учителя - EduProgress{% endblock %}
 
+{% block head %}
+  {{ super() }}
+  <!-- Подключаем шрифты Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans&display=swap" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="teacher-dashboard">
-
-    <!-- Декоративные цветочки в углах -->
-    <div class="decor-flower top-left" aria-hidden="true">
-      <svg width="80" height="80" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" >
-        <circle cx="32" cy="32" r="30" fill="#F9A825" opacity="0.3"/>
-        <path d="M32 12 L36 28 L52 28 L38 36 L42 52 L32 42 L22 52 L26 36 L12 28 L28 28 L32 12Z" fill="#E26B00" opacity="0.6"/>
-      </svg>
-    </div>
-
-    <div class="decor-flower bottom-right" aria-hidden="true">
-      <svg width="100" height="100" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" >
-        <circle cx="32" cy="32" r="30" fill="#F9A825" opacity="0.2"/>
-        <path d="M32 12 L36 28 L52 28 L38 36 L42 52 L32 42 L22 52 L26 36 L12 28 L28 28 L32 12Z" fill="#E26B00" opacity="0.4"/>
-      </svg>
-    </div>
 
     <!-- Хедер -->
     <header class="header">
         <div class="container header-container">
             <div class="profile-section">
-                <div class="avatar-circle">
+                <div class="avatar-circle" aria-label="Аватар пользователя">
                     {{ session.username[0]|upper }}
                 </div>
                 <div class="welcome-text">
@@ -39,7 +30,7 @@
     </header>
 
     <!-- Основной контент с 3 колонками -->
-    <main class="container main-grid">
+    <main class="container main-grid" role="main">
 
         <!-- Левая колонка: Мои ученики -->
         <section class="card students-card" aria-label="Список учеников">
@@ -48,7 +39,7 @@
             {% if students %}
             <ul class="students-list">
                 {% for student in students %}
-                <li class="student-item">
+                <li class="student-item" tabindex="0">
                     <div class="student-avatar-circle" aria-hidden="true">{{ student.full_name[0]|upper }}</div>
                     <div class="student-info">
                         <h3>{{ student.full_name }}</h3>
@@ -84,7 +75,7 @@
         <!-- Правая колонка: Быстрые действия -->
         <section class="card actions-card" aria-label="Быстрые действия учителя">
             <h2 class="section-title">Быстрые действия</h2>
-            <nav class="actions-nav">
+            <nav class="actions-nav" aria-label="Навигация быстрых действий">
                 <a href="{{ url_for('create_test') }}" class="action-btn" aria-label="Создать тест">
                     <i class="fas fa-plus-circle" aria-hidden="true"></i> Создать тест
                 </a>
@@ -102,145 +93,160 @@
 </div>
 
 <style>
-/* --- Общие стили --- */
-
+/* --- Новый фон с природой --- */
 body {
-    background-color: #A8C7D9;
+    background-image: url('https://i.pinimg.com/1200x/94/86/c9/9486c96860a224d02a528a949416adf9.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
     font-family: 'Open Sans', sans-serif;
-    color: #244A9C;
+    color: #4C4F3F;
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+/* Добавим лёгкий затемняющий налёт для контраста */
+body::before {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: rgba(60, 62, 38, 0.58);
+    pointer-events: none;
+    z-index: -1;
 }
 
-/* --- Декоративные цветочки --- */
-.decor-flower {
-  position: fixed;
-  pointer-events: none;
-  z-index: 0;
+/* Контейнеры теперь с прозрачным беловатым фоном для читаемости */
+.teacher-dashboard, .card {
+    background: rgba(250, 247, 234, 0.9);
+    border-radius: 28px;
+    box-shadow: 0 12px 30px rgba(72, 77, 55, 0.35);
+    transition: box-shadow 0.3s ease;
 }
 
-.top-left {
-  top: 10px;
-  left: 10px;
-  opacity: 0.3;
+/* При наведении тень чуть усиливается */
+.teacher-dashboard:hover, .card:hover {
+    box-shadow: 0 16px 40px rgba(72, 77, 55, 0.5);
 }
 
-.bottom-right {
-  bottom: 10px;
-  right: 10px;
-  opacity: 0.2;
-}
 
-/* --- Хедер --- */
+
+/* Хедер */
 .header {
-    background: #F9F2E7;
+    background: rgba(235, 232, 210, 0.95);
+    color: #4C4F3F;
     padding: 2rem 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 15px rgba(72, 77, 55, 0.6);
+    border-radius: 28px 28px 0 0; /* ← Закругление сверху */
     margin-bottom: 3rem;
     position: relative;
     z-index: 1;
+    display: flex;
+    justify-content: center;
 }
 
-.header-container {
+
+.container.header-container {
+    width: 90%;
+    max-width: 1200px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    flex-wrap: wrap;
 }
 
 .profile-section {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 .avatar-circle {
-    width: 70px;
-    height: 70px;
-    background: linear-gradient(135deg, #E26B00, #F9A825);
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    color: white;
-    font-weight: 700;
-    font-size: 2.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 4px 10px rgba(226,107,0,0.5);
+    background: linear-gradient(135deg, #4C4F3F, #7A833D);
+    color: #E7E7D9;
     font-family: 'Fredoka One', cursive;
+    font-weight: 700;
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    box-shadow: 0 4px 12px rgba(74, 79, 47, 0.5);
 }
 
 .welcome-text h1 {
+    color: #5E5F3E;
     font-family: 'Fredoka One', cursive;
+    font-weight: 700;
     font-size: 2.5rem;
-    margin: 0 0 0.3rem 0;
+    margin: 0;
+    line-height: 1.1;
 }
 
 .welcome-text p {
-    font-size: 1.2rem;
+    color: #7C7C53;
+    font-size: 1.1rem;
     margin: 0;
-    color: #244A9C;
 }
 
-/* --- Кнопки --- */
-.btn {
-    padding: 0.8rem 1.8rem;
+/* Кнопки */
+.btn-primary {
+    background: linear-gradient(135deg, #A5810A, #C7AE2B);
+    color: #3E3A09;
+    box-shadow: 0 6px 18px rgba(199, 174, 43, 0.8);
     border-radius: 30px;
+    padding: 0.75rem 1.75rem;
     font-weight: 700;
     font-size: 1.1rem;
-    cursor: pointer;
-    text-decoration: none;
+    transition: background 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
-    border: none;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    box-shadow: 0 4px 15px rgba(226,107,0,0.4);
+    gap: 0.5rem;
     user-select: none;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #E26B00, #F9A825);
-    color: white;
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-    background: linear-gradient(135deg, #F9A825, #E26B00);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(249,168,37,0.7);
+    background: linear-gradient(135deg, #C7AE2B, #A5810A);
+    color: #2D2906;
+    box-shadow: 0 8px 24px rgba(199, 174, 43, 1);
     outline: none;
 }
 
-.btn-large {
-    font-size: 1.3rem;
-    padding: 1rem 2.4rem;
+.btn-primary:focus-visible {
+    outline: 3px solid #C7AE2B;
+    outline-offset: 3px;
 }
 
 .btn-outline {
     background: transparent;
-    border: 2px solid #244A9C;
-    color: #244A9C;
-    border-radius: 30px;
-    padding: 0.6rem 1.6rem;
+    border: 2px solid #55572F;
+    color: #55572F;
+    border-radius: 25px;
+    padding: 0.5rem 1.25rem;
     font-weight: 600;
+    font-size: 1rem;
+    transition: background 0.25s ease, color 0.25s ease;
+    user-select: none;
 }
 
 .btn-outline:hover,
 .btn-outline:focus {
-    background: #244A9C;
+    background: #55572F;
     color: white;
     outline: none;
 }
 
-/* --- Основной грид --- */
+.btn-outline:focus-visible {
+    outline: 3px solid #947F0C;
+    outline-offset: 3px;
+}
+
+/* Основной грид */
 .main-grid {
     display: grid;
     grid-template-columns: 1.8fr 1.2fr 1fr;
@@ -256,156 +262,152 @@ body {
     }
 }
 
-/* --- Карточки --- */
-.card {
-    background: #F9F2E7;
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 8px 20px rgba(36, 74, 156, 0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    position: relative;
-}
-
-/* --- Заголовки секций --- */
+/* Заголовки секций */
 .section-title {
     font-family: 'Fredoka One', cursive;
-    font-size: 2rem;
-    color: #244A9C;
-    margin: 0 0 1rem 0;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    font-size: 2.25rem;
+    color: #5E5F3E;
+    margin-bottom: 1.25rem;
+    user-select: none;
 }
 
-/* --- Значок количества --- */
+/* Значок количества */
 .badge {
-    background: #E26B00;
+    background: #947F0C;
     color: white;
-    padding: 0.3rem 1rem;
+    padding: 0.4rem 1.2rem;
     border-radius: 30px;
     font-weight: 700;
-    font-size: 1rem;
-    box-shadow: 0 4px 10px rgba(226,107,0,0.5);
+    font-size: 1.1rem;
+    box-shadow: 0 5px 18px rgba(148,127,12,0.75);
+    user-select: none;
 }
 
-/* --- Список учеников --- */
+/* Список учеников и карточки */
 .students-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
     max-height: 480px;
     overflow-y: auto;
+    padding: 0;
+    margin: 0;
+    list-style: none;
 }
 
 .student-item {
-    background: white;
-    border-radius: 15px;
-    padding: 1rem 1.5rem;
+    background: rgba(239, 235, 218, 0.85);
+    color: #52573C;
+    box-shadow: 0 6px 18px rgba(92, 92, 53, 0.15);
+    border-radius: 20px;
     display: flex;
     align-items: center;
     gap: 1rem;
-    box-shadow: 0 4px 12px rgba(36,74,156,0.1);
-    transition: box-shadow 0.3s ease;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    transition: box-shadow 0.3s ease, background-color 0.3s ease;
+    cursor: default;
 }
 
 .student-item:hover,
 .student-item:focus-within {
-    box-shadow: 0 8px 20px rgba(36,74,156,0.25);
+    box-shadow: 0 10px 28px rgba(92, 92, 53, 0.3);
+    background-color: rgba(239, 235, 218, 1);
+    outline: none;
 }
 
 .student-avatar-circle {
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(135deg, #244A9C, #3B6DD1);
-    border-radius: 50%;
-    color: white;
-    font-weight: 700;
-    font-size: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background: linear-gradient(135deg, #4C4F3F, #7A833D);
+    color: #E7E7D9;
     font-family: 'Fredoka One', cursive;
+    font-weight: 700;
+    font-size: 1.8rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
     flex-shrink: 0;
+    box-shadow: 0 3px 8px rgba(74, 79, 47, 0.4);
 }
 
 .student-info h3 {
-    margin: 0;
-    font-size: 1.2rem;
+    color: #4B4F38;
+    margin: 0 0 0.15rem 0;
     font-weight: 700;
+    font-size: 1.2rem;
 }
 
 .student-info p {
+    color: #787C5A;
     margin: 0;
-    font-size: 0.9rem;
-    color: #4a6fa5;
+    font-size: 0.95rem;
+    font-weight: 600;
 }
 
 .student-stars {
-    margin-left: auto;
-    color: #E26B00;
+    color: #967E08;
     font-weight: 700;
-    font-size: 1.2rem;
+    font-size: 1rem;
     display: flex;
     align-items: center;
     gap: 0.3rem;
+    margin-left: auto;
+    user-select: none;
 }
-
 .student-stars i {
-    color: #E26B00;
+    color: #967E08;
 }
 
-/* --- Пустое состояние --- */
+/* Пустое состояние */
 .empty-state {
+    color: #4B4F38;
     text-align: center;
-    color: #244A9C;
+    padding: 3rem 1rem;
+    user-select: none;
 }
-
 .empty-icon {
+    color: #947F0C;
     font-size: 4rem;
     margin-bottom: 1rem;
-    color: #E26B00;
 }
 
-/* --- Статистика --- */
+/* Статистика */
 .stats-list {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 1.2rem;
-}
-
-.stats-list li {
-    background: white;
-    border-radius: 15px;
-    padding: 1rem 1.5rem;
-    font-weight: 700;
-    font-size: 1.2rem;
-    color: #244A9C;
-    box-shadow: 0 4px 12px rgba(36,74,156,0.1);
-    display: flex;
-    align-items: center;
     gap: 1rem;
 }
 
+.stats-list li {
+    background: rgba(237, 233, 212, 0.95);
+    color: #5A5E40;
+    box-shadow: 0 6px 18px rgba(72,77,55,0.15);
+    border-radius: 20px;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    user-select: none;
+}
+
 .stat-number {
-    background: #244A9C;
-    color: white;
+    background: #4B4F38;
+    color: #E6E8D7;
     font-weight: 700;
     font-size: 1.3rem;
     padding: 0.3rem 1rem;
     border-radius: 30px;
-    min-width: 50px;
+    min-width: 60px;
     text-align: center;
+    box-shadow: 0 4px 12px rgba(75,79,56,0.8);
 }
 
-/* --- Быстрые действия --- */
+/* Быстрые действия */
 .actions-nav {
     display: flex;
     flex-direction: column;
@@ -413,67 +415,261 @@ body {
 }
 
 .action-btn {
-    background: #E26B00;
+    background: #A18110;
     color: white;
-    padding: 1rem 1.5rem;
+    box-shadow: 0 8px 24px rgba(161,129,16,0.7);
     border-radius: 30px;
+    padding: 0.85rem 1.5rem;
     font-weight: 700;
     font-size: 1.1rem;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 0.8rem;
-    text-decoration: none;
-    box-shadow: 0 6px 18px rgba(226,107,0,0.5);
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    gap: 0.6rem;
+    transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
     user-select: none;
-}
-
-.action-btn i {
-    font-size: 1.4rem;
 }
 
 .action-btn:hover,
 .action-btn:focus {
-    background: #F9A825;
-    transform: translateX(5px);
+    background: #C7AE2B;
+    color: #3C3601;
+    box-shadow: 0 10px 30px rgba(199,174,43,0.9);
     outline: none;
 }
 
-/* --- Скроллбар для списка учеников --- */
+.action-btn:focus-visible {
+    outline: 3px solid #947F0C;
+    outline-offset: 3px;
+}
+
+/* Скроллбар для списка учеников */
 .students-list::-webkit-scrollbar {
     width: 8px;
 }
-
 .students-list::-webkit-scrollbar-track {
-    background: #F9F6F1;
+    background: rgba(239, 234, 213, 0.7);
     border-radius: 10px;
 }
-
 .students-list::-webkit-scrollbar-thumb {
-    background: #E26B00;
+    background: #957F11;
     border-radius: 10px;
 }
-
 .students-list::-webkit-scrollbar-thumb:hover {
-    background: #F9A825;
+                    </a>
+                <a href="{{ url_for('profile') }}" class="action-btn" aria-label="Мой профиль">
+                    <i class="fas fa-user" aria-hidden="true"></i> Мой профиль
+                </a>
+                <a href="{{ url_for('logout') }}" class="action-btn logout-btn" aria-label="Выйти из системы">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Выйти
+                </a>
+            </nav>
+        </section>
+
+    </main>
+
+    <!-- Футер -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <p>&copy; 2024 EduProgress. Все права защищены.</p>
+            <p>Сделано с <i class="fas fa-heart" style="color: #e74c3c;" aria-hidden="true"></i> для образования</p>
+        </div>
+    </footer>
+
+</div>
+
+<style>
+/* Дополнительные стили для завершения дизайна */
+
+/* Стили для футера */
+.footer {
+    background: rgba(72, 77, 55, 0.9);
+    color: #E6E8D7;
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 3rem;
+    border-radius: 28px 28px 0 0;
+}
+
+.footer p {
+    margin: 0.5rem 0;
+    font-size: 1rem;
+}
+
+/* Стили для кнопки выхода */
+.logout-btn {
+    background: #8B4513 !important;
+    box-shadow: 0 8px 24px rgba(139, 69, 19, 0.7) !important;
+}
+
+.logout-btn:hover,
+.logout-btn:focus {
+    background: #A0522D !important;
+    box-shadow: 0 10px 30px rgba(160, 82, 45, 0.9) !important;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+
+    .profile-section {
+        flex-direction: column;
+    }
+
+    .welcome-text h1 {
+        font-size: 2rem;
+    }
+
+    .main-grid {
+        gap: 1.5rem;
+    }
+
+    .student-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+
+    .student-stars {
+        margin-left: 0;
+    }
+
+    .stats-list li {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        justify-content: center;
+    }
+}
+
+/* Анимации для плавного появления */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.students-card { animation-delay: 0.1s; }
+.stats-card { animation-delay: 0.2s; }
+.actions-card { animation-delay: 0.3s; }
+
+/* Улучшенная доступность для фокуса */
+.btn:focus-visible,
+.action-btn:focus-visible,
+.student-item:focus-visible {
+    outline: 3px solid #947F0C;
+    outline-offset: 2px;
+}
+
+/* Темная тема поддержка */
+@media (prefers-color-scheme: dark) {
+    .teacher-dashboard,
+    .card {
+        background: rgba(40, 40, 30, 0.95);
+        color: #E6E8D7;
+    }
+
+    .header {
+        background: rgba(50, 50, 40, 0.95);
+    }
+
+    .student-item {
+        background: rgba(60, 60, 45, 0.9);
+        color: #E6E8D7;
+    }
+
+    .stats-list li {
+        background: rgba(55, 55, 40, 0.9);
+        color: #E6E8D7;
+    }
+}
+
+/* Плавные переходы для всех интерактивных элементов */
+.btn,
+.action-btn,
+.student-item,
+.stats-list li {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Улучшенная читаемость для длинных списков */
+.students-list {
+    scrollbar-width: thin;
+    scrollbar-color: #957F11 rgba(239, 234, 213, 0.7);
+}
+
+/* Поддержка reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 </style>
 
+<!-- Подключение Font Awesome для иконок -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    // Плавное появление карточек
-    const cards = document.querySelectorAll('.card');
-    cards.forEach((card, idx) => {
-        card.style.opacity = 0;
-        card.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            card.style.opacity = 1;
-            card.style.transform = 'translateY(0)';
-        }, idx * 150);
+// Небольшой JavaScript для улучшения UX
+document.addEventListener('DOMContentLoaded', function() {
+    // Плавная прокрутка для якорных ссылок
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Добавляем aria-live для динамического контента
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+        mainContent.setAttribute('aria-live', 'polite');
+    }
+
+    // Улучшение доступности для карточек учеников
+    document.querySelectorAll('.student-item').forEach(item => {
+        item.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const link = this.querySelector('a');
+                if (link) {
+                    link.click();
+                }
+            }
+        });
     });
 });
-</script>
 
+// Функция для обновления данных в реальном времени (заглушка)
+function updateLiveData() {
+    // Здесь может быть реализация WebSocket или Polling
+    console.log('Обновление данных...');
+}
+
+// Запускаем обновление каждые 30 секунд
+setInterval(updateLiveData, 30000);
+</script>
 {% endblock %}
 
