@@ -4,211 +4,657 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Профиль ученика - {{ student.username }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .dashboard-card {
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+        :root {
+            --primary: #A5810A;
+            --primary-dark: #7A833D;
+            --secondary: #4C4F3F;
+            --light: #FAF7EA;
+            --lighter: #EBE8D2;
+            --dark: #4C4F3F;
+            --darker: #3E3A09;
+            --success: #7A833D;
+            --danger: #8B4513;
+            --warning: #C7AE2B;
+            --gray: #7C7C53;
+            --gray-light: #E7E7D9;
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        body {
+            background-image: url('https://i.pinimg.com/1200x/94/86/c9/9486c96860a224d02a528a949416adf9.jpg');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            color: var(--dark);
+            line-height: 1.5;
+            min-height: 100vh;
+            position: relative;
+            font-size: 0.9rem;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(60, 62, 38, 0.58);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        /* Навигация */
+        .navbar {
+            background: rgba(235, 232, 210, 0.95);
+            padding: 1rem 0;
+            box-shadow: 0 4px 12px rgba(72, 77, 55, 0.6);
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 2rem;
+        }
+
+        .navbar-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .navbar-brand {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            color: var(--darker);
+            text-decoration: none;
+        }
+
+        .navbar-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .navbar-text {
+            color: var(--darker);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Кнопки */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            text-decoration: none;
+            font-size: 0.85rem;
+            gap: 0.3rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--warning));
+            color: var(--darker);
+            box-shadow: 0 4px 12px rgba(199, 174, 43, 0.7);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--warning), var(--primary));
+            box-shadow: 0 6px 16px rgba(199, 174, 43, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--secondary);
+            color: var(--secondary);
+        }
+
+        .btn-outline:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        /* Карточки - УМЕНЬШЕНЫ ОТСТУПЫ */
+        .card {
+            background: rgba(250, 247, 234, 0.9);
+            border-radius: 16px;
+            padding: 1.2rem;
+            box-shadow: 0 6px 18px rgba(72, 77, 55, 0.12);
+            border: 1px solid rgba(224, 231, 255, 0.3);
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary), var(--primary-dark));
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--lighter);
+            padding: 0 0 1rem 0;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.2rem;
+            color: var(--darker);
+            margin: 0;
+        }
+
+        /* Заголовок профиля */
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1.2rem;
+            background: rgba(250, 247, 234, 0.9);
+            border-radius: 16px;
+            box-shadow: 0 6px 18px rgba(72, 77, 55, 0.12);
+        }
+
+        .profile-title {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.6rem;
+            color: var(--darker);
+        }
+
+        .rank-badge {
+            padding: 0.4rem 1rem;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(165, 129, 10, 0.2);
+            color: var(--primary-dark);
+        }
+
         .stars {
-            color: #ffc107;
+            color: var(--warning);
+            font-size: 1.5rem;
+            font-weight: 700;
         }
+
+        /* Статистика */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.7rem 0;
+            border-bottom: 1px solid var(--lighter);
+            font-size: 0.9rem;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: var(--darker);
+        }
+
+        /* Прогресс бар */
+        .progress-container {
+            margin-bottom: 1.2rem;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.4rem;
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
         .progress-bar {
-            transition: width 0.5s ease-in-out;
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 4px;
+            overflow: hidden;
         }
-        .badge-rank {
-            background: linear-gradient(45deg, #4e73df, #224abe);
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            border-radius: 4px;
+            transition: width 0.3s ease;
         }
+
+        /* Достижения */
+        .achievement-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--lighter);
+            font-size: 0.9rem;
+        }
+
+        .achievement-item:last-child {
+            border-bottom: none;
+        }
+
+        .achievement-check {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.7rem;
+        }
+
+        .achievement-check.achieved {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .achievement-info {
+            flex-grow: 1;
+        }
+
+        .achievement-name {
+            font-weight: 600;
+            color: var(--darker);
+            font-size: 0.9rem;
+        }
+
+        .achievement-desc {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        /* Таблица результатов */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: rgba(165, 129, 10, 0.1);
+            padding: 0.8rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--darker);
+            border-bottom: 1px solid var(--lighter);
+        }
+
+        td {
+            padding: 0.8rem;
+            border-bottom: 1px solid var(--lighter);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
         .test-result {
-            border-left: 4px solid;
+            border-left: 3px solid transparent;
         }
+
         .test-result.success {
-            border-left-color: #28a745;
+            border-left-color: var(--success);
         }
+
         .test-result.warning {
-            border-left-color: #ffc107;
+            border-left-color: var(--warning);
         }
+
         .test-result.danger {
-            border-left-color: #dc3545;
+            border-left-color: var(--danger);
+        }
+
+        .result-badge {
+            padding: 0.3rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(122, 131, 61, 0.2);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(199, 174, 43, 0.2);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(139, 69, 19, 0.2);
+            color: var(--danger);
+        }
+
+        /* График прогресса */
+        .chart-placeholder {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .chart-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            color: var(--gray-light);
+        }
+
+        .level-badges {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.2rem;
+        }
+
+        .level-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 992px) {
+            .profile-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .navbar-container {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .navbar-nav {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            th, td {
+                padding: 0.6rem 0.4rem;
+            }
+
+            .level-badges {
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .card {
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Сетка для колонок */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -0.75rem;
+        }
+
+        .col-md-4, .col-md-8 {
+            padding: 0 0.75rem;
+            flex: 0 0 auto;
+        }
+
+        .col-md-4 {
+            width: 33.333333%;
+        }
+
+        .col-md-8 {
+            width: 66.666667%;
+        }
+
+        @media (max-width: 992px) {
+            .col-md-4, .col-md-8 {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">Образовательная платформа</a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">Учитель: {{ session.username }}</span>
-                <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('teacher_students') }}">
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a class="navbar-brand" href="{{ url_for('home') }}">EduProgress</a>
+            <div class="navbar-nav">
+                <span class="navbar-text">Учитель: {{ session.username }}</span>
+                <a class="btn btn-outline" href="{{ url_for('teacher_students') }}">
                     <i class="fas fa-arrow-left me-1"></i>Назад к списку
                 </a>
-                <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">Выйти</a>
+                <a class="btn btn-primary" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt"></i>Выйти
+                </a>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <!-- Заголовок и статистика -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2>Профиль ученика: {{ student.username }}</h2>
-                        <span class="badge badge-rank fs-6">{{ student.current_rank }}</span>
-                    </div>
-                    <div class="stars fs-3">
-                        <i class="fas fa-star"></i> {{ student.stars }}
-                    </div>
-                </div>
+    <div class="container">
+        <!-- Заголовок профиля -->
+        <div class="profile-header">
+            <div>
+                <h1 class="profile-title">Профиль ученика: {{ student.username }}</h1>
+                <span class="rank-badge">{{ student.current_rank }}</span>
+            </div>
+            <div class="stars">
+                <i class="fas fa-star"></i> {{ student.stars }}
             </div>
         </div>
 
         <div class="row">
             <!-- Левая колонка - статистика -->
             <div class="col-md-4">
-                <div class="card dashboard-card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Общая статистика</h5>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Общая статистика</h3>
                     </div>
-                    <div class="card-body">
-                        <div class="student-stats">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>ID ученика:</span>
-                                <strong>#{{ student.id }}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Тестов пройдено:</span>
-                                <strong>{{ test_results|length }}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Средний результат:</span>
-                                <strong>
-                                    {% if test_results %}
-                                        {{ (test_results|map(attribute='percentage')|sum / test_results|length)|round(1) }}%
-                                    {% else %}
-                                        0%
-                                    {% endif %}
-                                </strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Всего звёзд:</span>
-                                <strong class="stars">{{ student.stars }}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span>Дата регистрации:</span>
-                                <strong>{{ student.registration_date or 'Неизвестно' }}</strong>
-                            </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">ID ученика:</span>
+                            <span class="stat-value">#{{ student.id }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Тестов пройдено:</span>
+                            <span class="stat-value">{{ test_results|length }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Средний результат:</span>
+                            <span class="stat-value">
+                                {% if test_results %}
+                                    {{ (test_results|map(attribute='percentage')|sum / test_results|length)|round(1) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Всего звёзд:</span>
+                            <span class="stat-value stars">{{ student.stars }}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Дата регистрации:</span>
+                            <span class="stat-value">{{ student.registration_date or 'Неизвестно' }}</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="card dashboard-card mt-4">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Прогресс обучения</h5>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Прогресс обучения</h3>
                     </div>
-                    <div class="card-body text-center">
-                        <div class="progress mb-3" style="height: 20px;">
+                    <div class="progress-container">
+                        <div class="progress-text">
+                            <span>Прогресс уровня</span>
+                            <span>{{ (student.stars % 15) }}/15</span>
+                        </div>
+                        <div class="progress-bar">
                             {% set progress = (student.stars % 15) * 6.67 %}
-                            <div class="progress-bar bg-warning" style="width: {{ progress }}%">
-                                {{ progress|round(1) }}%
-                            </div>
+                            <div class="progress-fill" style="width: {{ progress }}%"></div>
                         </div>
-                        <small class="text-muted">До следующего уровня: {{ 15 - (student.stars % 15) }} звёзд</small>
+                        <div class="progress-text">
+                            <small>До следующего уровня: {{ 15 - (student.stars % 15) }} звёзд</small>
+                        </div>
+                    </div>
 
-                        <div class="mt-4">
-                            <h6>Достижения</h6>
-                            <div class="achievements-list">
-                                {% for achievement_id, achievement in achievements.items() %}
-                                    {% set achieved = achievement_id in student_achievements %}
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox"
-                                               {{ 'checked' if achieved }} disabled>
-                                        <label class="form-check-label {{ 'text-success' if achieved else 'text-muted' }}">
-                                            {{ achievement.name }} ({{ achievement.stars_required }} звёзд)
-                                        </label>
-                                    </div>
-                                {% endfor %}
+                    <div class="card-header" style="margin-top: 1.2rem;">
+                        <h3 class="card-title">Достижения</h3>
+                    </div>
+                    <div class="achievements-list">
+                        {% for achievement_id, achievement in achievements.items() %}
+                            {% set achieved = achievement_id in student_achievements %}
+                            <div class="achievement-item">
+                                <div class="achievement-check {{ 'achieved' if achieved }}">
+                                    <i class="fas {{ 'fa-check' if achieved else 'fa-lock' }}"></i>
+                                </div>
+                                <div class="achievement-info">
+                                    <div class="achievement-name">{{ achievement.name }}</div>
+                                    <div class="achievement-desc">{{ achievement.stars_required }} звёзд</div>
+                                </div>
                             </div>
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
 
             <!-- Правая колонка - результаты тестов -->
             <div class="col-md-8">
-                <div class="card dashboard-card">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">Результаты тестов</h5>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Результаты тестов</h3>
                     </div>
-                    <div class="card-body">
+                    <div class="table-container">
                         {% if test_results %}
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Тест</th>
-                                            <th>Результат</th>
-                                            <th>Звёзды</th>
-                                            <th>Дата</th>
-                                            <th>Действия</th>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Тест</th>
+                                        <th>Результат</th>
+                                        <th>Звёзды</th>
+                                        <th>Дата</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for result in test_results %}
+                                        <tr class="test-result
+                                            {% if result.percentage >= 80 %}success
+                                            {% elif result.percentage >= 50 %}warning
+                                            {% else %}danger{% endif %}">
+                                            <td>{{ result.test_title }}</td>
+                                            <td>
+                                                <span class="result-badge
+                                                    {% if result.percentage >= 80 %}badge-success
+                                                    {% elif result.percentage >= 50 %}badge-warning
+                                                    {% else %}badge-danger{% endif %}">
+                                                    {{ result.percentage }}%
+                                                </span>
+                                                ({{ result.score }}/{{ result.total_questions }})
+                                            </td>
+                                            <td class="stars">+{{ result.stars_earned }}</td>
+                                            <td>{{ result.completed_date }}</td>
+                                            <td>
+                                                <a href="{{ url_for('test_results', result_id=result.id) }}"
+                                                   class="btn btn-outline" style="padding: 0.3rem 0.6rem;">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for result in test_results %}
-                                            <tr class="test-result
-                                                {% if result.percentage >= 80 %}success
-                                                {% elif result.percentage >= 50 %}warning
-                                                {% else %}danger{% endif %}">
-                                                <td>{{ result.test_title }}</td>
-                                                <td>
-                                                    <span class="badge bg-
-                                                        {% if result.percentage >= 80 %}success
-                                                        {% elif result.percentage >= 50 %}warning
-                                                        {% else %}danger{% endif %}">
-                                                        {{ result.percentage }}%
-                                                    </span>
-                                                    ({{ result.score }}/{{ result.total_questions }})
-                                                </td>
-                                                <td class="stars">+{{ result.stars_earned }}</td>
-                                                <td>{{ result.completed_date }}</td>
-                                                <td>
-                                                    <a href="{{ url_for('test_results', result_id=result.id) }}"
-                                                       class="btn btn-sm btn-outline-primary">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                                <h5>Нет результатов тестов</h5>
-                                <p class="text-muted">Ученик ещё не проходил тесты</p>
+                            <div class="chart-placeholder">
+                                <i class="fas fa-clipboard-list chart-icon"></i>
+                                <h4>Нет результатов тестов</h4>
+                                <p>Ученик ещё не проходил тесты</p>
                             </div>
                         {% endif %}
                     </div>
                 </div>
 
                 <!-- График прогресса -->
-                <div class="card dashboard-card mt-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">График прогресса</h5>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">График прогресса</h3>
                     </div>
-                    <div class="card-body">
-                        <div class="text-center py-4">
-                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                            <h5>График успеваемости</h5>
-                            <p class="text-muted">Здесь будет отображаться график прогресса ученика</p>
-                            <div class="mt-3">
-                                <span class="badge bg-info me-2">Высокий уровень: 80-100%</span>
-                                <span class="badge bg-warning me-2">Средний уровень: 50-79%</span>
-                                <span class="badge bg-danger">Низкий уровень: 0-49%</span>
-                            </div>
+                    <div class="chart-placeholder">
+                        <i class="fas fa-chart-line chart-icon"></i>
+                        <h4>График успеваемости</h4>
+                        <p>Здесь будет отображаться график прогресса ученика</p>
+                        <div class="level-badges">
+                            <span class="level-badge badge-success">Высокий: 80-100%</span>
+                            <span class="level-badge badge-warning">Средний: 50-79%</span>
+                            <span class="level-badge badge-danger">Низкий: 0-49%</span>
                         </div>
                     </div>
                 </div>
@@ -216,6 +662,18 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Автоматическое скрытие flash-сообщений (если они есть)
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(message => {
+                setTimeout(() => {
+                    message.style.transition = 'opacity 0.5s ease';
+                    message.style.opacity = '0';
+                    setTimeout(() => message.remove(), 500);
+                }, 5000);
+            });
+        });
+    </script>
 </body>
 </html>

@@ -1113,7 +1113,7 @@ def student_details(student_id):
 
     conn.close()
 
-    return render_template("student_details.html",
+    return render_template("student_dashboard.html",
                            student=student,
                            test_results=test_results,
                            student_achievements=student_achievements,

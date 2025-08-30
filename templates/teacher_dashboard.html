@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Панель учителя - EduProgress{% endblock %}
+{% block title %}Панель учителя - Progress{% endblock %}
 
 {% block head %}
   {{ super() }}
@@ -134,11 +134,11 @@ body::before {
 
 /* Хедер */
 .header {
-    background: rgba(235, 232, 210, 0.95);
-    color: #4C4F3F;
+    background: rgba(235, 232, 210, 0.95) !important; /* Золотисто-бежевый фон */
+    color: #4C4F3F !important; /* Темно-зеленый текст */
     padding: 2rem 0;
-    box-shadow: 0 4px 15px rgba(72, 77, 55, 0.6);
-    border-radius: 28px 28px 0 0; /* ← Закругление сверху */
+    box-shadow: 0 4px 15px rgba(72, 77, 55, 0.6) !important; /* Зеленая тень */
+    border-radius: 28px 28px 0 0;
     margin-bottom: 3rem;
     position: relative;
     z-index: 1;
@@ -179,7 +179,7 @@ body::before {
 }
 
 .welcome-text h1 {
-    color: #5E5F3E;
+    color: var(--darker) !important;
     font-family: 'Fredoka One', cursive;
     font-weight: 700;
     font-size: 2.5rem;
@@ -470,7 +470,7 @@ body::before {
     <!-- Футер -->
     <footer class="footer" role="contentinfo">
         <div class="container">
-            <p>&copy; 2024 EduProgress. Все права защищены.</p>
+            <p>&copy; 2024 Progress. Все права защищены.</p>
             <p>Сделано с <i class="fas fa-heart" style="color: #e74c3c;" aria-hidden="true"></i> для образования</p>
         </div>
     </footer>
