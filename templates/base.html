@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Progress - Образовательная платформа{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        :root {
+            --primary: #4C4F3F; /* тёмно-зелёный */
+            --primary-light: #7A833D; /* светло-зелёный */
+            --primary-dark: #3F422F; /* более тёмный зелёный */
+            --secondary: #947F0C; /* золотисто-коричневый */
+            --accent: #F0E68C; /* светлый золотистый */
+            --success: #4fd1c5;
+            --warning: #f6ad55;
+            --danger: #fc8181;
+            --dark: #2d3748;
+            --light: #f7fafc;
+            --gray: #a0aec0;
+
+            --gradient-primary: linear-gradient(135deg, #4C4F3F 0%, #7A833D 100%);
+            --gradient-success: linear-gradient(135deg, #4fd1c5 0%, #38b2ac 100%);
+            --gradient-warning: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        /* Анимации */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .animate-pulse-slow {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Гласс морфизм эффект */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow:
+                0 15px 40px rgba(0, 0, 0, 0.15),
+                0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Кнопки */
+        .btn-gradient {
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 15px;
+            padding: 14px 28px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(76, 79, 63, 0.4);
+        }
+
+        .btn-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-gradient:hover::before {
+            left: 100%;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(76, 79, 63, 0.6);
+        }
+
+        /* Формы */
+        .form-control {
+            border-radius: 12px;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(76, 79, 63, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Навигация */
+        .navbar {
+            background: var(--gradient-primary) !important;
+            box-shadow: 0 4px 20px rgba(72, 77, 55, 0.6);
+        }
+
+        .nav-brand {
+            font-weight: 800;
+            font-size: 1.8rem;
+            background: linear-gradient(45deg, #ebe8d2, #7a833d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 4px rgba(72, 77, 55, 0.3);
+        }
+
+        /* Звезды */
+        .star-rating {
+            color: var(--warning);
+            text-shadow: 0 2px 4px rgba(246, 173, 85, 0.3);
+        }
+
+        /* Бейджи */
+        .achievement-badge {
+            background: var(--primary);
+            color: white;
+            border-radius: 25px;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(76, 79, 63, 0.4);
+        }
+
+        /* Прогресс бар */
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+            background: rgba(160, 174, 192, 0.2);
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: var(--gradient-primary);
+            border-radius: 10px;
+            transition: width 1s ease-in-out;
+        }
+
+        /* Кастомный скроллбар */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(160, 174, 192, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Утилиты */
+        .text-gradient {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hover-lift {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Декоративные элементы */
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+            border-radius: 50%;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--primary);
+            top: -150px;
+            right: -150px;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: var(--secondary);
+            bottom: -100px;
+            left: -100px;
+            animation: float 6s ease-in-out infinite reverse;
+        }
+    </style>
+</head>
+<body>
+    <!-- Декоративные фоновые элементы -->
+    <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+    </div>
+
+    <!-- Навигация -->
+    {% block navbar %}
+    {% if session.user_id %}
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand nav-brand animate-pulse-slow" href="{{ url_for('home') }}">
+                <i class="fas fa-graduation-cap me-2"></i>Progress
+            </a>
+
+            <div class="navbar-nav ms-auto align-items-center">
+                {% if session.role == 'teacher' %}
+                <a class="nav-link me-4" href="{{ url_for('teacher_dashboard') }}">
+                    <i class="fas fa-home me-1"></i>Главная
+                </a>
+                <a class="nav-link me-4" href="{{ url_for('teacher_students') }}">
+                    <i class="fas fa-users me-1"></i>Ученики
+                </a>
+                {% else %}
+                <a class="nav-link me-4" href="{{ url_for('student_dashboard') }}">
+                    <i class="fas fa-home me-1"></i>Главная
+                </a>
+                <a class="nav-link me-4" href="{{ url_for('achievements') }}">
+                    <i class="fas fa-trophy me-1"></i>Достижения
+                </a>
+                {% endif %}
+
+                <span class="navbar-text me-4">
+                    <i class="fas fa-user me-2"></i>{{ session.username }}
+                    <span class="achievement-badge ms-2">{{ session.current_rank }}</span>
+                </span>
+
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt me-1"></i>Выйти
+                </a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    {% endblock %}
+
+    <!-- Основное содержимое -->
+    <div class="container py-5">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show glass-card mb-4 animate-fade-in">
+                    <i class="fas fa-{% if category == 'success' %}check-circle{% else %}exclamation-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+
