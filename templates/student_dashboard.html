@@ -661,109 +661,7 @@
                 </div>
             </div>
 
-            <!-- Правая колонка - тесты и создание теста -->
-            <div class="col-lg-8">
-                <!-- Создание теста -->
-                <div class="card animate-fade-in" style="animation-delay: 0.1s;">
-                    <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-plus-circle me-2"></i>Создать тест
-                        </h3>
-                    </div>
 
-                    <form method="POST" action="{{ url_for('create_test_for_student', student_id=student.id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-                        <div class="horizontal-form">
-                            <div class="form-group">
-                                <label class="form-label">Название теста *</label>
-                                <input type="text" class="form-control" name="title" required
-                                       placeholder="Введите название теста">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Описание</label>
-                                <input type="text" class="form-control" name="description"
-                                       placeholder="Описание теста">
-                            </div>
-
-                            <div class="form-group">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-plus me-2"></i>Создать
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-
-                    <div id="questions-container">
-                        <div class="question-block">
-                            <div class="question-header">
-                                <span class="question-number">Вопрос 1</span>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Текст вопроса *</label>
-                                <input type="text" class="form-control" name="question_1" required
-                                       placeholder="Введите вопрос">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Правильный ответ *</label>
-                                <input type="text" class="form-control" name="answer_1" required
-                                       placeholder="Введите правильный ответ">
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="button" class="btn btn-secondary w-100 mb-3" id="add-question">
-                        <i class="fas fa-plus me-1"></i>Добавить вопрос
-                    </button>
-                </div>
-
-                <!-- Тесты ученика -->
-                <div class="card animate-fade-in" style="animation-delay: 0.2s;">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h3 class="card-title">
-                            <i class="fas fa-clipboard-list me-2"></i>Тесты ученика
-                        </h3>
-                        <span class="badge bg-primary">{{ tests|length }}</span>
-                    </div>
-
-                    {% if tests %}
-                    <div class="row g-3">
-                        {% for test in tests %}
-                        <div class="col-md-6">
-                            <div class="test-card">
-                                <h4 class="test-card-title">{{ test.title }}</h4>
-                                {% if test.description %}
-                                <p class="test-card-desc">{{ test.description }}</p>
-                                {% endif %}
-                                <div class="test-card-footer">
-                                    <span class="badge bg-info">
-                                        {{ test.questions|length }} вопросов
-                                    </span>
-                                    <small class="text-muted">{{ test.created_date }}</small>
-                                </div>
-                                <div class="btn-group mt-3 w-100">
-                                    <a href="{{ url_for('take_test', test_id=test.id, student_id=student.id) }}"
-                                       class="btn btn-sm btn-primary">
-                                        <i class="fas fa-play me-1"></i>Пройти
-                                    </a>
-                                    <a href="{{ url_for('edit_test', test_id=test.id) }}"
-                                       class="btn btn-sm btn-outline">
-                                        <i class="fas fa-edit me-1"></i>Изменить
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                        <h4 class="text-muted">Тестов пока нет</h4>
-                        <p class="text-muted">Создайте первый тест для этого ученика</p>
-                    </div>
-                    {% endif %}
-                </div>
 
 
     <script>
@@ -826,5 +724,5 @@
             });
         });
     </script>
-</body>
+    </body>
 </html>
