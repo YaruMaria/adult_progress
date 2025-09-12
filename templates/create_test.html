@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Создать тест</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         :root {
             --primary: #A5810A;
@@ -117,7 +117,7 @@
             box-shadow: 0 4px 12px rgba(199, 174, 43, 0.7);
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: linear-gradient(135deg, var(--warning), var(--primary));
             box-shadow: 0 6px 16px rgba(199, 174, 43, 0.9);
             transform: translateY(-1px);
@@ -129,7 +129,7 @@
             border: 1px solid var(--primary);
         }
 
-        .btn-secondary:hover {
+        .btn-secondary:hover:not(:disabled) {
             background: rgba(165, 129, 10, 0.25);
         }
 
@@ -139,7 +139,7 @@
             border: 1px solid var(--danger);
         }
 
-        .btn-danger:hover {
+        .btn-danger:hover:not(:disabled) {
             background: rgba(139, 69, 19, 0.25);
         }
 
@@ -149,9 +149,16 @@
             color: var(--secondary);
         }
 
-        .btn-outline:hover {
+        .btn-outline:hover:not(:disabled) {
             background: var(--secondary);
             color: white;
+        }
+
+        .btn:disabled,
+        .btn[disabled] {
+            opacity: 0.5;
+            cursor: default;
+            pointer-events: none;
         }
 
         /* Карточки */
@@ -324,11 +331,11 @@
             </div>
 
             <form method="POST" action="{{ url_for('create_test') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
                 <div class="mb-3">
                     <label for="title" class="form-label">Название теста *</label>
-                    <input type="text" class="form-control" id="title" name="title" required>
+                    <input type="text" class="form-control" id="title" name="title" required />
                 </div>
 
                 <div class="mb-3">
@@ -344,14 +351,17 @@
                     <div class="question-block" id="question-1">
                         <div class="question-header">
                             <span class="question-number">Вопрос 1</span>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion(1)" disabled>
+                                <i class="fas fa-trash"></i> Удалить
+                            </button>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Текст вопроса *</label>
-                            <input type="text" class="form-control" name="question_1" required>
+                            <input type="text" class="form-control" name="question_1" required />
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Правильный ответ *</label>
-                            <input type="text" class="form-control" name="answer_1" required>
+                            <input type="text" class="form-control" name="answer_1" required />
                         </div>
                     </div>
                 </div>
@@ -376,9 +386,11 @@
         let questionCount = 1;
         const maxQuestions = 10;
 
-        document.getElementById('add-question').addEventListener('click', function() {
+        document.getElementById('add-question').addEventListener('click', function () {
             if (questionCount < maxQuestions) {
                 questionCount++;
+                const questionsContainer = document.getElementById('questions-container');
+
                 const newQuestion = document.createElement('div');
                 newQuestion.className = 'question-block';
                 newQuestion.id = `question-${questionCount}`;
@@ -391,46 +403,64 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Текст вопроса *</label>
-                        <input type="text" class="form-control" name="question_${questionCount}" required>
+                        <input type="text" class="form-control" name="question_${questionCount}" required />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Правильный ответ *</label>
-                        <input type="text" class="form-control" name="answer_${questionCount}" required>
+                        <input type="text" class="form-control" name="answer_${questionCount}" required />
                     </div>
                 `;
-                document.getElementById('questions-container').appendChild(newQuestion);
+                questionsContainer.appendChild(newQuestion);
+
+                // Разблокировать кнопку удаления первого вопроса, если добавлен второй
+                if (questionCount > 1) {
+                    const firstRemoveBtn = document.querySelector('#question-1 button.btn-danger');
+                    if (firstRemoveBtn) firstRemoveBtn.disabled = false;
+                }
 
                 if (questionCount === maxQuestions) {
-                    document.getElementById('add-question').disabled = true;
+                    this.disabled = true;
                 }
             }
         });
 
-        function removeQuestion(questionNumber) {
-            const questionElement = document.getElementById(`question-${questionNumber}`);
-            if (questionElement && questionNumber > 1) {
-                questionElement.remove();
+        function removeQuestion(number) {
+            if (questionCount <= 1) return; // нельзя удалить последний вопрос
+
+            const questionElem = document.getElementById(`question-${number}`);
+            if (questionElem) {
+                questionElem.remove();
                 questionCount--;
+
+                // Разблокировать кнопку добавления вопросов
                 document.getElementById('add-question').disabled = false;
 
-                // Перенумеровать оставшиеся вопросы
+                // Перенумеровать вопросы и обновить имена и id
                 const questions = document.querySelectorAll('.question-block');
                 questions.forEach((question, index) => {
                     const newNumber = index + 1;
                     question.id = `question-${newNumber}`;
-                    const questionNumberElement = question.querySelector('.question-number');
-                    questionNumberElement.textContent = `Вопрос ${newNumber}`;
+
+                    const numberElem = question.querySelector('.question-number');
+                    if (numberElem) numberElem.textContent = `Вопрос ${newNumber}`;
 
                     const questionInput = question.querySelector('input[name^="question_"]');
                     const answerInput = question.querySelector('input[name^="answer_"]');
 
-                    if (questionInput) questionInput.name = `question_${newNumber}`;
-                    if (answerInput) answerInput.name = `answer_${newNumber}`;
+                    if (questionInput) {
+                        questionInput.name = `question_${newNumber}`;
+                        questionInput.id = `question_${newNumber}`;
+                    }
+                    if (answerInput) {
+                        answerInput.name = `answer_${newNumber}`;
+                        answerInput.id = `answer_${newNumber}`;
+                    }
 
-                    // Обновить обработчик удаления
-                    const removeButton = question.querySelector('button');
-                    if (removeButton) {
-                        removeButton.setAttribute('onclick', `removeQuestion(${newNumber})`);
+                    const removeBtn = question.querySelector('button.btn-danger');
+                    if (removeBtn) {
+                        removeBtn.setAttribute('onclick', `removeQuestion(${newNumber})`);
+                        // Отключить кнопку удаления, если это единственный вопрос
+                        removeBtn.disabled = (questionCount === 1);
                     }
                 });
             }
@@ -438,3 +468,5 @@
     </script>
 </body>
 </html>
+
+Найти еще

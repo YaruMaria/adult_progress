@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Список тестов</h2>
+{% if tests %}
+    <ul>
+        {% for test in tests %}
+            <li>
+                <strong>{{ test.title }}</strong><br>
+                {{ test.description }}<br>
+                <a href="{{ url_for('test_detail', test_id=test.id) }}">Просмотреть тест</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Тестов пока нет.</p>
+{% endif %}
+<a href="{{ url_for('add_test') }}">Добавить новый тест</a>
+{% endblock %}
