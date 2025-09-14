@@ -830,42 +830,74 @@ def add_student():
 @login_required
 @teacher_required
 def teacher_student_dashboard(student_id):
+    """Дашборд учителя для конкретного ученика"""
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM users WHERE id = ?", (student_id,))
-    student = cursor.fetchone()
+    # Получаем данные ученика
+    cursor.execute("SELECT * FROM users WHERE id = ? AND role = 'student'", (student_id,))
+    student_row = cursor.fetchone()
 
-    if not student:
+    if not student_row:
         flash("Ученик не найден", "error")
         return redirect(url_for("teacher_dashboard"))
 
-    # Получаем тесты для этого ученика
+    # Преобразуем в словарь для безопасного доступа
+    student = dict(student_row)
+
+    # Получаем тесты для этого ученика (включая завершенные)
     cursor.execute("""
-        SELECT t.*, tr.id as result_id, tr.percentage 
+        SELECT t.*, tr.id as result_id, tr.percentage, tr.score, tr.total_questions,
+               tr.stars_earned, tr.completed_date
         FROM tests t 
         LEFT JOIN test_results tr ON t.id = tr.test_id AND tr.student_id = ?
-        WHERE t.student_id = ? OR t.student_id IS NULL
+        WHERE t.student_id = ? OR t.creator_id = ? OR t.student_id IS NULL
         ORDER BY t.created_date DESC
-    """, (student_id, student_id))
+    """, (student_id, student_id, session['user_id']))
 
     tests = cursor.fetchall()
 
-    # Получаем результаты тестов
+    # Получаем результаты тестов ученика
     cursor.execute("""
-        SELECT tr.*, t.title as test_title
+        SELECT tr.*, t.title as test_title, t.description as test_description
         FROM test_results tr
         JOIN tests t ON tr.test_id = t.id
         WHERE tr.student_id = ?
         ORDER BY tr.completed_date DESC
     """, (student_id,))
-
     test_results = cursor.fetchall()
 
-    conn.close()
+    # Получаем достижения ученика
+    cursor.execute("""
+        SELECT sa.achievement_id, sa.achieved_date, a.name as achievement_name
+        FROM student_achievements sa
+        LEFT JOIN (
+            SELECT 1 as achievement_id, 'Новичок' as name UNION
+            SELECT 5, 'Ученик' UNION
+            SELECT 15, 'Знаток' UNION
+            SELECT 30, 'Эксперт' UNION
+            SELECT 50, 'Мастер' UNION
+            SELECT 100, 'Гуру'
+        ) a ON sa.achievement_id = a.achievement_id
+        WHERE sa.student_id = ?
+        ORDER BY sa.achieved_date DESC
+    """, (student_id,))
+    student_achievements = cursor.fetchall()
 
-    # Преобразуем в словарь для безопасного доступа
-    student = dict(student)
+    # Получаем статистику ученика
+    cursor.execute("""
+        SELECT 
+            COUNT(tr.id) as total_tests,
+            SUM(tr.score) as total_correct_answers,
+            SUM(tr.total_questions) as total_questions,
+            SUM(tr.stars_earned) as total_stars_earned,
+            AVG(tr.percentage) as average_score
+        FROM test_results tr
+        WHERE tr.student_id = ?
+    """, (student_id,))
+    stats = cursor.fetchone()
+
+    conn.close()
 
     # Преобразуем строку даты в объект datetime для форматирования в шаблоне
     if student.get('created_date'):
@@ -876,10 +908,35 @@ def teacher_student_dashboard(student_id):
     else:
         student['created_date'] = None
 
+    # Преобразуем даты в результатах тестов
+    formatted_test_results = []
+    for result in test_results:
+        result_dict = dict(result)
+        if result_dict.get('completed_date'):
+            try:
+                result_dict['completed_date'] = datetime.strptime(result_dict['completed_date'], "%Y-%m-%d %H:%M:%S")
+            except (ValueError, TypeError):
+                result_dict['completed_date'] = None
+        formatted_test_results.append(result_dict)
+
+    # Преобразуем даты в достижениях
+    formatted_achievements = []
+    for achievement in student_achievements:
+        achievement_dict = dict(achievement)
+        if achievement_dict.get('achieved_date'):
+            try:
+                achievement_dict['achieved_date'] = datetime.strptime(achievement_dict['achieved_date'], "%Y-%m-%d %H:%M:%S")
+            except (ValueError, TypeError):
+                achievement_dict['achieved_date'] = None
+        formatted_achievements.append(achievement_dict)
+
     return render_template("student_dashboard.html",
                            student=student,
                            tests=tests,
-                           test_results=test_results)
+                           test_results=formatted_test_results,
+                           student_achievements=formatted_achievements,
+                           achievements=ACHIEVEMENTS,
+                           stats=dict(stats) if stats else {})
 
 @app.route("/teacher/students/delete/<int:student_id>", methods=['POST'])
 @login_required
@@ -1322,7 +1379,7 @@ def finish_student_test(test_id, user_answers):
             correct_answers += 1
 
     percentage = int((correct_answers / total_questions) * 100) if total_questions > 0 else 0
-    stars_earned = correct_answers
+    stars_earned = correct_answers  # 1 звезда за каждый правильный ответ
 
     # Определяем ID пользователя и его роль
     user_id = session['user_id']
@@ -1346,16 +1403,31 @@ def finish_student_test(test_id, user_answers):
 
     # Обновляем звезды только для учеников
     if user_role == 'student':
-        cursor.execute("SELECT stars FROM users WHERE id = ?", (user_id,))
-        current_stars = cursor.fetchone()['stars'] or 0
-        new_stars = current_stars + stars_earned
-        cursor.execute("UPDATE users SET stars = ? WHERE id = ?", (new_stars, user_id))
-        conn.commit()
+        try:
+            cursor.execute("SELECT stars FROM users WHERE id = ?", (user_id,))
+            current_stars_result = cursor.fetchone()
+            current_stars = current_stars_result['stars'] if current_stars_result else 0
+            new_stars = current_stars + stars_earned
 
-        # Проверяем достижения только для учеников
-        messages = check_achievements(user_id, cursor)
-        for msg in messages:
-            flash(msg, 'success')
+            cursor.execute("UPDATE users SET stars = ? WHERE id = ?", (new_stars, user_id))
+            conn.commit()
+
+            # Проверяем достижения только для учеников
+            messages = check_achievements(user_id, cursor)
+            for msg in messages:
+                flash(msg, 'success')
+
+        except Exception as e:
+            print(f"Ошибка при обновлении звезд: {e}")
+            conn.rollback()
+
+    # Обновляем статус теста на 'completed'
+    try:
+        cursor.execute("UPDATE tests SET status = 'completed' WHERE id = ?", (test_id,))
+        conn.commit()
+    except Exception as e:
+        print(f"Ошибка при обновлении статуса теста: {e}")
+        conn.rollback()
 
     conn.close()
 
@@ -1373,7 +1445,6 @@ def finish_student_test(test_id, user_answers):
         return redirect(url_for('student_dashboard'))
     else:
         # Для учителя возвращаем на страницу ученика, если тест был назначен конкретному ученику
-        # Или на dashboard учителя, если это общий тест
         if 'student_id' in test and test['student_id']:
             return redirect(url_for('teacher_student_dashboard', student_id=test['student_id']))
         else:
