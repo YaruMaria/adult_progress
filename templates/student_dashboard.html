@@ -584,256 +584,370 @@
     </style>
 </head>
 <body>
-    <!-- Навигация -->
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">Progress</a>
-            <div class="navbar-nav">
-                <span class="navbar-text">Учитель: {{ session.username }}</span>
-                <a class="btn btn-outline" href="{{ url_for('teacher_students') }}">
-                    <i class="fas fa-arrow-left me-1"></i> Назад к списку
-                </a>
-                <a class="btn btn-primary" href="{{ url_for('logout') }}">
-                    <i class="fas fa-sign-out-alt"></i> Выйти
-                </a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container">
-        <div class="row">
-            <!-- Левая колонка - профиль ученика -->
-            <div class="col-lg-4">
-                <!-- Карточка профиля -->
-                <div class="card animate-fade-in">
-                    <div class="text-center">
-                        <div class="avatar-container">
-                            <div class="avatar-circle">
-                                <i class="fas fa-user-graduate"></i>
-                            </div>
-                        </div>
-                        <h3 class="card-title">{{ student.full_name }}</h3>
-                        <p class="text-muted">@{{ student.username }}</p>
-                        <div class="stars fs-4 animate-pulse-slow">
-                            <i class="fas fa-star"></i> {{ student.stars }}
-                        </div>
-                    </div>
-
-                    <div class="student-info">
-                        <div class="info-item">
-                            <i class="fas fa-layer-group"></i>
-                            <span class="label">Уровень:</span>
-                            <span class="value">{{ student.initial_level }}</span>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span class="label">Начал:</span>
-                            <span class="value">{{ student.start_date }}</span>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-trophy"></i>
-                            <span class="label">Статус:</span>
-                            <span class="value badge bg-primary">{{ student.current_rank }}</span>
-                        </div>
-                        <div class="info-item">
-                            <i class="fas fa-bullseye"></i>
-                            <span class="label">Цель:</span>
-                            <span class="value">{{ student.goal }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Прогресс бар -->
-                    <div class="progress-section">
-                        <div class="progress-text">
-                            <span>Прогресс обучения</span>
-                            <span>{{ (student.stars % 15) }}/15</span>
-                        </div>
-                        <div class="progress-bar">
-                            {% set progress = (student.stars % 15) * 6.67 %}
-                            <div class="progress-fill" style="width: {{ progress }}%"></div>
-                        </div>
-                        <div class="progress-text">
-                            <small>До следующего уровня: {{ 15 - (student.stars % 15) }} звёзд</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Правая колонка - создание и список тестов -->
-            <div class="col-lg-8">
-                <!-- Форма создания теста -->
-                <div class="card animate-fade-in">
-                    <div class="card-header">
-                        <h4 class="card-title">Создать тест для {{ student.full_name }}</h4>
-                    </div>
-                    <form method="POST" action="{{ url_for('create_test_for_student', student_id=student.id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <div class="mb-3">
-                            <label class="form-label">Название теста *</label>
-                            <input type="text" class="form-control" name="title" required placeholder="Введите название теста">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Описание</label>
-                            <textarea class="form-control" name="description" rows="3" placeholder="Описание теста (опционально)"></textarea>
-                        </div>
-                        <div id="questions-container">
-                            <div class="question-block">
-                                <div class="question-header">
-                                    <span class="question-number">Вопрос 1</span>
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="if(document.querySelectorAll('.question-block').length > 1) { this.parentElement.parentElement.remove(); questionCount--; }">
-                                        <i class="fas fa-trash me-1"></i>Удалить
-                                    </button>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Текст вопроса *</label>
-                                    <input type="text" class="form-control" name="question_1" required placeholder="Введите вопрос">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Правильный ответ *</label>
-                                    <input type="text" class="form-control" name="answer_1" required placeholder="Введите правильный ответ">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <button type="button" class="btn btn-secondary" id="add-question">
-                                <i class="fas fa-plus me-1"></i>Добавить вопрос
-                            </button>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i>Создать тест
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Список тестов -->
-                <div class="card animate-fade-in">
-                    <div class="card-header">
-                        <h4 class="card-title">Тесты ученика</h4>
-                    </div>
-                    {% if tests %}
-                        {% for test in tests %}
-                            <div class="test-card">
-                                <div class="test-card-title">{{ test.title }}</div>
-                                {% if test.description %}
-                                    <div class="test-card-desc">{{ test.description }}</div>
-                                {% endif %}
-                                <div class="test-card-footer">
-                                    <small class="text-muted">Создан: {{ test.created_date }}</small>
-                                    {% if test.result_id %}
-                                        <span class="badge bg-success">Пройден ({{ test.percentage }}%)</span>
-                                    {% else %}
-                                        <a href="{{ url_for('take_test', test_id=test.id, student_id=student.id) }}" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-play me-1"></i>Пройти тест
-                                        </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="text-muted">Тестов пока нет. Создайте первый тест выше.</p>
-                    {% endif %}
-                </div>
-
-                <!-- Результаты тестов -->
-                {% if test_results %}
-                    <div class="card animate-fade-in">
-                        <div class="card-header">
-                            <h4 class="card-title">Результаты тестов</h4>
-                        </div>
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Тест</th>
-                                        <th>Результат</th>
-                                        <th>Звёзды</th>
-                                        <th>Дата</th>
-                                        <th>Действия</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for result in test_results %}
-                                        <tr>
-                                            <td>{{ result.test_title }}</td>
-                                            <td>{{ result.percentage }}%</td>
-                                            <td><span class="stars"><i class="fas fa-star"></i> {{ result.stars_earned }}</span></td>
-                                            <td>{{ result.completed_date }}</td>
-                                            <td>
-                                                <a href="{{ url_for('test_results', result_id=result.id) }}" class="btn btn-outline btn-sm">
-                                                    <i class="fas fa-eye"></i> Просмотр
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
+<!-- Навигация -->
+<nav class="navbar">
+    <div class="navbar-container">
+        <a class="navbar-brand" href="{{ url_for('home') }}">Progress</a>
+        <div class="navbar-nav">
+            <span class="navbar-text">Учитель: {{ session.username }}</span>
+            <a class="btn btn-outline" href="{{ url_for('teacher_students') }}">
+                <i class="fas fa-arrow-left me-1"></i> Назад к списку
+            </a>
+            <a class="btn btn-primary" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt"></i> Выйти
+            </a>
         </div>
     </div>
+</nav>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Динамическое добавление вопросов
-            let questionCount = 1;
-            const maxQuestions = 10;
+<div class="container">
+    <div class="row">
+        <!-- Левая колонка - профиль ученика -->
+        <div class="col-lg-4">
+            <!-- Карточка профиля -->
+            <div class="card animate-fade-in">
+                <div class="text-center">
+                    <div class="avatar-container">
+                        <div class="avatar-circle">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                    </div>
+                    <h3 class="card-title">{{ student.full_name }}</h3>
+                    <p class="text-muted">@{{ student.username }}</p>
+                    <div class="stars fs-4 animate-pulse-slow">
+                        <i class="fas fa-star"></i> {{ student.stars }}
+                    </div>
+                </div>
 
-            document.getElementById('add-question').addEventListener('click', function() {
-                if (questionCount < maxQuestions) {
-                    questionCount++;
-                    const newQuestion = document.createElement('div');
-                    newQuestion.className = 'question-block';
-                    newQuestion.innerHTML = `
-                        <div class="question-header">
-                            <span class="question-number">Вопрос ${questionCount}</span>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove(); questionCount--;">
-                                <i class="fas fa-trash me-1"></i>Удалить
-                            </button>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Текст вопроса *</label>
-                            <input type="text" class="form-control" name="question_${questionCount}" required
-                                   placeholder="Введите вопрос">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Правильный ответ *</label>
-                            <input type="text" class="form-control" name="answer_${questionCount}" required
-                                   placeholder="Введите правильный ответ">
-                        </div>
-                    `;
-                    document.getElementById('questions-container').appendChild(newQuestion);
+                <div class="student-info">
+                    <div class="info-item">
+                        <i class="fas fa-layer-group"></i>
+                        <span class="label">Уровень:</span>
+                        <span class="value">{{ student.initial_level }}</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="label">Начал:</span>
+                        <span class="value">{{ student.start_date }}</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-trophy"></i>
+                        <span class="label">Статус:</span>
+                        <span class="value badge bg-primary">{{ student.current_rank }}</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-bullseye"></i>
+                        <span class="label">Цель:</span>
+                        <span class="value">{{ student.goal }}</span>
+                    </div>
+                </div>
 
-                    if (questionCount === maxQuestions) {
-                        this.disabled = true;
-                        this.innerHTML = '<i class="fas fa-ban me-1"></i>Максимум вопросов';
-                    }
+                <!-- Прогресс бар -->
+                <div class="progress-section">
+                    <div class="progress-text">
+                        <span>Прогресс обучения</span>
+                        <span>{{ (student.stars % 15) }}/15</span>
+                    </div>
+                    <div class="progress-bar">
+                        {% set progress = (student.stars % 15) * 6.67 %}
+                        <div class="progress-fill" style="width: {{ progress }}%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <small>До следующего уровня: {{ 15 - (student.stars % 15) }} звёзд</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка - создание и список тестов -->
+        <div class="col-lg-8">
+            <!-- Форма создания теста -->
+            <div class="card animate-fade-in">
+                <div class="card-header">
+                    <h4 class="card-title">Создать тест для {{ student.full_name }}</h4>
+                </div>
+                <form method="POST" action="{{ url_for('create_test_for_student', student_id=student.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-3">
+                        <label class="form-label">Название теста *</label>
+                        <input type="text" class="form-control" name="title" required
+                               placeholder="Введите название теста">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea class="form-control" name="description" rows="3"
+                                  placeholder="Описание теста (опционально)"></textarea>
+                    </div>
+                    <div id="questions-container">
+                        <div class="question-block">
+                            <div class="question-header">
+                                <span class="question-number">Вопрос 1</span>
+                                <button type="button" class="btn btn-sm btn-danger"
+                                        onclick="if(document.querySelectorAll('.question-block').length > 1) { this.parentElement.parentElement.remove(); questionCount--; }">
+                                    <i class="fas fa-trash me-1"></i>Удалить
+                                </button>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Текст вопроса *</label>
+                                <input type="text" class="form-control" name="question_1" required
+                                       placeholder="Введите вопрос">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Правильный ответ *</label>
+                                <input type="text" class="form-control" name="answer_1" required
+                                       placeholder="Введите правильный ответ">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-secondary" id="add-question">
+                            <i class="fas fa-plus me-1"></i>Добавить вопрос
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Создать тест
+                    </button>
+                </form>
+            </div>
+
+            <!-- Список тестов -->
+            <div class="card animate-fade-in">
+                <div class="card-header">
+                    <h4 class="card-title">Тесты ученика</h4>
+                </div>
+                {% if tests %}
+                {% for test in tests %}
+                <div class="test-card">
+                    <div class="test-card-title">{{ test.title }}</div>
+                    {% if test.description %}
+                    <div class="test-card-desc">{{ test.description }}</div>
+                    {% endif %}
+                    <div class="test-card-footer">
+                        <small class="text-muted">Создан: {{ test.created_date }}</small>
+                        {% if test.result_id %}
+                        <span class="badge bg-success">Пройден ({{ test.percentage }}%)</span>
+                        {% else %}
+                        <a href="{{ url_for('take_test', test_id=test.id) }}"
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-play me-1"></i>Пройти тест
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted">Тестов пока нет. Создайте первый тест выше.</p>
+                {% endif %}
+            </div>
+
+            <!-- Результаты тестов -->
+            {% if test_results %}
+            <div class="card animate-fade-in">
+                <div class="card-header">
+                    <h4 class="card-title">Результаты тестов</h4>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Тест</th>
+                            <th>Результат</th>
+                            <th>Звёзды</th>
+                            <th>Дата</th>
+                            <th>Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for result in test_results %}
+                        <tr>
+                            <td>{{ result.test_title }}</td>
+                            <td>{{ result.percentage }}%</td>
+                            <td><span class="stars"><i class="fas fa-star"></i> {{ result.stars_earned }}</span></td>
+                            <td>{{ result.completed_date }}</td>
+                            <td>
+                                <a href="{{ url_for('test_results', result_id=result.id) }}"
+                                   class="btn btn-outline btn-sm">
+                                    <i class="fas fa-eye"></i> Просмотр
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Динамическое добавление вопросов
+        let questionCount = 1;
+        const maxQuestions = 10;
+
+        document.getElementById('add-question').addEventListener('click', function() {
+            if (questionCount < maxQuestions) {
+                questionCount++;
+                const newQuestion = document.createElement('div');
+                newQuestion.className = 'question-block';
+                newQuestion.innerHTML = `
+                    <div class="question-header">
+                        <span class="question-number">Вопрос ${questionCount}</span>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove(); questionCount--;">
+                            <i class="fas fa-trash me-1"></i>Удалить
+                        </button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Текст вопроса *</label>
+                        <input type="text" class="form-control" name="question_${questionCount}" required
+                               placeholder="Введите вопрос">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Правильный ответ *</label>
+                        <input type="text" class="form-control" name="answer_${questionCount}" required
+                               placeholder="Введите правильный ответ">
+                    </div>
+                `;
+                document.getElementById('questions-container').appendChild(newQuestion);
+
+                if (questionCount === maxQuestions) {
+                    this.disabled = true;
+                    this.innerHTML = '<i class="fas fa-ban me-1"></i>Максимум вопросов';
                 }
-            });
+            }
+        });
 
-            // Анимация звезд при наведении
-            const stars = document.querySelectorAll('.stars');
-            stars.forEach(star => {
-                star.addEventListener('mouseenter', () => {
-                    star.classList.add('animate-pulse-slow');
-                });
-                star.addEventListener('mouseleave', () => {
-                    star.classList.remove('animate-pulse-slow');
-                });
+        // Анимация звезд при наведении
+        const stars = document.querySelectorAll('.stars');
+        stars.forEach(star => {
+            star.addEventListener('mouseenter', () => {
+                star.classList.add('animate-pulse-slow');
             });
-
-            // Анимация прогресс-бара
-            const progressBars = document.querySelectorAll('.progress-fill');
-            progressBars.forEach(bar => {
-                const width = bar.style.width;
-                bar.style.width = '0';
-                setTimeout(() => {
-                    bar.style.width = width;
-                }, 400);
+            star.addEventListener('mouseleave', () => {
+                star.classList.remove('animate-pulse-slow');
             });
         });
-    </script>
+
+        // Анимация прогресс-бара
+        const progressBars = document.querySelectorAll('.progress-fill');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 400);
+        });
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+const addQuestionBtn = document.getElementById('add-question');
+let questionCount = 1;
+
+// Добавление нового вопроса
+addQuestionBtn.addEventListener('click', function() {
+    if (questionCount < 10) {
+        questionCount++;
+        const newQuestion = document.createElement('div');
+        newQuestion.className = 'question-block';
+        newQuestion.innerHTML = `
+            <div class="question-header">
+                <span class="question-number">Вопрос ${questionCount}</span>
+                <button type="button" class="btn btn-sm btn-danger remove-question">
+                    <i class="fas fa-trash me-1"></i>Удалить
+                </button>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Текст вопроса *</label>
+                <input type="text" class="form-control" name="question_${questionCount}" required
+                       placeholder="Введите вопрос">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Правильный ответ *</label>
+                <input type="text" class="form-control" name="answer_${questionCount}" required
+                       placeholder="Введите правильный ответ">
+            </div>
+        `;
+        document.getElementById('questions-container').appendChild(newQuestion);
+
+        // Добавляем обработчик для кнопки удаления
+        newQuestion.querySelector('.remove-question').addEventListener('click', function() {
+            if (document.querySelectorAll('.question-block').length > 1) {
+                newQuestion.remove();
+                questionCount--;
+            }
+        });
+
+        if (questionCount === 10) {
+            addQuestionBtn.disabled = true;
+            addQuestionBtn.innerHTML = '<i class="fas fa-ban me-1"></i>Максимум вопросов';
+        }
+    }
+});
+});
+
+// Обработка отправки формы
+testForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Собираем данные формы
+    const formData = new FormData(testForm);
+    const title = formData.get('title');
+    const description = formData.get('description');
+
+    // Собираем вопросы
+    const questions = [];
+    const questionInputs = document.querySelectorAll('.question-input');
+    const answerInputs = document.querySelectorAll('.answer-input');
+
+    for (let i = 0; i < questionInputs.length; i++) {
+        const question = questionInputs[i].value.trim();
+        const answer = answerInputs[i].value.trim();
+
+        if (question && answer) {
+            questions.push({question, answer});
+        }
+    }
+
+    // Отправляем данные на сервер
+    fetch("{{ url_for('create_test_for_student', student_id=student.id) }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            title: title,
+            description: description,
+            questions: questions
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            // Очищаем форму
+            testForm.reset();
+            // Оставляем только первый вопрос
+            const questionBlocks = document.querySelectorAll('.question-block');
+            for (let i = 1; i < questionBlocks.length; i++) {
+                questionBlocks[i].remove();
+            }
+            questionCount = 1;
+            // Перезагружаем страницу для обновления списка тестов
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при создании теста');
+    });
+});
+});
+</script>
 </body>
 </html>
-

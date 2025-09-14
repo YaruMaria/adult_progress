@@ -12,8 +12,7 @@ from datetime import datetime
 import logging  # Добавьте в начало файла, если не импортировано
 from forms import TestForm  # Добавьте, если forms.py в том же каталоге
 
-
-# Настройка логирования (добавьте в начало app.py, если нет)
+# Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -84,6 +83,8 @@ def init_db():
                     created_date TEXT NOT NULL,
                     updated_date TEXT,
                     student_id INTEGER,
+                    results TEXT,  -- Добавлено: для хранения JSON с результатами (опционально)
+                    status TEXT DEFAULT 'in_progress',  -- Добавлено: статус теста
                     FOREIGN KEY (creator_id) REFERENCES users(id),
                     FOREIGN KEY (student_id) REFERENCES users(id)
                 );
@@ -157,7 +158,6 @@ def login_required(f):
             flash('Пожалуйста, войдите для доступа к этой странице', 'error')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
-
     return decorated_function
 
 def teacher_required(f):
@@ -167,7 +167,6 @@ def teacher_required(f):
             flash('Эта функция доступна только учителям', 'error')
             return redirect(url_for('home'))
         return f(*args, **kwargs)
-
     return decorated_function
 
 def student_required(f):
@@ -177,7 +176,6 @@ def student_required(f):
             flash('Эта функция доступна только ученикам', 'error')
             return redirect(url_for('home'))
         return f(*args, **kwargs)
-
     return decorated_function
 
 # Маршруты аутентификации
@@ -236,6 +234,25 @@ def update_db_schema():
             print("Добавлен столбец student_id в tests")
             conn.commit()
 
+        # Добавляем results и status в tests (если не существуют)
+        if 'results' not in columns:
+            cursor.execute("ALTER TABLE tests ADD COLUMN results TEXT")
+            print("Добавлен столбец results в tests")
+            conn.commit()
+
+        if 'status' not in columns:
+            cursor.execute("ALTER TABLE tests ADD COLUMN status TEXT DEFAULT 'in_progress'")
+            print("Добавлен столбец status в tests")
+            conn.commit()
+
+        # Проверяем users на наличие stars (уже должен быть, но на всякий случай)
+        cursor.execute("PRAGMA table_info(users)")
+        user_columns = [column[1] for column in cursor.fetchall()]
+        if 'stars' not in user_columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN stars INTEGER DEFAULT 0")
+            print("Добавлен столбец stars в users")
+            conn.commit()
+
         conn.close()
 
     except sqlite3.Error as e:
@@ -245,45 +262,38 @@ def update_db_schema():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        try:
-            username = request.form.get('username', '').strip()
-            password = request.form.get('password', '').strip()
-            confirm_password = request.form.get('confirm_password', '').strip()
-            role = request.form.get('role', 'student')
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+        role = request.form.get('role', 'student')
 
-            # Валидация
-            errors = []
-            if len(username) < 3:
-                errors.append('Логин должен содержать минимум 3 символа')
-            if len(password) < 6:
-                errors.append('Пароль должен содержать минимум 6 символов')
-            if password != confirm_password:
-                errors.append('Пароли не совпадают')
-            if role not in ['student', 'teacher']:
-                errors.append('Необходимо выбрать роль')
+        # Валидация
+        errors = []
+        if len(username) < 3:
+            errors.append('Логин должен содержать минимум 3 символа')
+        if len(password) < 6:
+            errors.append('Пароль должен содержать минимум 6 символов')
+        if password != confirm_password:
+            errors.append('Пароли не совпадают')
+        if role not in ['student', 'teacher']:
+            errors.append('Необходимо выбрать роль')
 
-            if errors:
-                for error in errors:
-                    flash(error, 'error')
-                return render_template('register.html', username=username)
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+            return render_template('register.html', username=username)
 
-            hashed_password = generate_password_hash(password)
-            with get_db() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    'INSERT INTO users (username, password, role, current_rank) VALUES (?, ?, ?, ?)',
-                    (username, hashed_password, role, 'Новичок' if role == 'student' else 'Учитель')
-                )
-                conn.commit()
+        hashed_password = generate_password_hash(password)
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'INSERT INTO users (username, password, role, current_rank) VALUES (?, ?, ?, ?)',
+                (username, hashed_password, role, 'Новичок' if role == 'student' else 'Учитель')
+            )
+            conn.commit()
 
-            flash('Регистрация успешна! Теперь войдите', 'success')
-            return redirect(url_for('login'))
-
-        except sqlite3.IntegrityError:
-            flash('Пользователь с таким именем уже существует', 'error')
-        except Exception as e:
-            flash('Произошла ошибка при регистрации', 'error')
-            print(f"Ошибка регистрации: {e}")
+        flash('Регистрация успешна! Теперь войдите', 'success')
+        return redirect(url_for('login'))
 
     return render_template('register.html')
 
@@ -573,149 +583,6 @@ def check_achievements(student_id, cursor):
 
     return messages
 
-@app.route("/teacher/student/<int:student_id>/test/<int:test_id>/take")
-@login_required
-@teacher_required
-def take_test(test_id, student_id):
-    """Страница прохождения теста"""
-    conn = get_db()
-    cursor = conn.cursor()
-
-    # Получаем тест
-    cursor.execute("SELECT * FROM tests WHERE id = ? AND student_id = ?", (test_id, student_id))
-    test = cursor.fetchone()
-
-    if not test:
-        flash('Тест не найден', 'error')
-        return redirect(url_for('student_dashboard', student_id=student_id))
-
-    questions = json.loads(test['questions']) if test['questions'] else []
-    question_index = int(request.args.get('question_index', 0))
-
-    # Получаем сохраненные ответы из сессии
-    session_key = f'test_{test_id}_answers'
-    user_answers = session.get(session_key, []) or ['' for _ in questions]
-
-    conn.close()
-
-    return render_template("test_take.html",
-                         test=test,
-                         questions=questions,
-                         current_question=question_index,
-                         total_questions=len(questions),
-                         user_answers=user_answers,
-                         student_id=student_id)
-
-@app.route("/teacher/student/<int:student_id>/test/<int:test_id>/answer/<int:question_index>", methods=['POST'])
-@login_required
-@teacher_required
-def process_test_answer(test_id, student_id, question_index):
-    """Обработка ответа на вопрос теста"""
-    conn = get_db()
-    cursor = conn.cursor()
-
-    # Получаем тест
-    cursor.execute("SELECT * FROM tests WHERE id = ? AND student_id = ?", (test_id, student_id))
-    test = cursor.fetchone()
-    questions = json.loads(test['questions']) if test['questions'] else []
-
-    # Сохраняем ответ в сессии
-    session_key = f'test_{test_id}_answers'
-    user_answers = session.get(session_key, []) or ['' for _ in questions]
-    user_answers[question_index] = request.form.get('answer', '').strip()
-    session[session_key] = user_answers
-
-    # Если это последний вопрос, завершаем тест
-    if request.form.get('finish') and question_index == len(questions) - 1:
-        return finish_test(test_id, student_id, questions, user_answers, cursor, conn)
-
-    # Переходим к следующему вопросу
-    next_question = min(question_index + 1, len(questions) - 1)
-    conn.close()
-
-    return redirect(url_for('take_test', test_id=test_id, student_id=student_id, question_index=next_question))
-
-def finish_test(test_id, student_id, questions, user_answers, cursor, conn):
-    """Завершение теста и подсчет результатов"""
-    # Получаем данные теста
-    cursor.execute("SELECT * FROM tests WHERE id = ?", (test_id,))
-    test = cursor.fetchone()
-
-    if not test:
-        flash('Тест не найден', 'error')
-        return redirect(url_for('student_dashboard', student_id=student_id))
-
-    # Проверяем ответы
-    correct_answers = 0
-    results = []
-
-    for i, question in enumerate(questions):
-        is_correct = user_answers[i].lower() == question['answer'].lower()
-        if is_correct:
-            correct_answers += 1
-
-        results.append({
-            'question': question['question'],
-            'user_answer': user_answers[i],
-            'correct_answer': question['answer'],
-            'is_correct': is_correct
-        })
-
-    # Вычисляем результаты
-    total_questions = len(questions)
-    percentage = round((correct_answers / total_questions) * 100) if total_questions > 0 else 0
-
-    # Начисляем звезды в зависимости от процента правильных ответов
-    if percentage >= 90:
-        stars_earned = 3
-    elif percentage >= 70:
-        stars_earned = 2
-    elif percentage >= 50:
-        stars_earned = 1
-    else:
-        stars_earned = 0
-
-    # Сохраняем результат
-    cursor.execute(
-        """INSERT INTO test_results 
-        (test_id, student_id, score, total_questions, percentage, stars_earned, answers, completed_date) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (test_id, student_id, correct_answers, total_questions, percentage,
-         stars_earned, json.dumps(results), datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    )
-
-    # Обновляем общее количество звезд ученика
-    if stars_earned > 0:
-        cursor.execute(
-            "UPDATE users SET stars = stars + ? WHERE id = ?",
-            (stars_earned, student_id)
-        )
-
-        # Проверяем достижения
-        achievement_messages = check_achievements(student_id, cursor)
-
-    conn.commit()
-    result_id = cursor.lastrowid
-
-    # Очищаем ответы из сессии
-    session_key = f'test_{test_id}_answers'
-    if session_key in session:
-        del session[session_key]
-
-    conn.close()
-
-    return render_template("test_complete.html",
-                           test=test,
-                           result={
-                               'percentage': percentage,
-                               'stars_earned': stars_earned,
-                               'score': correct_answers,
-                               'total_questions': total_questions
-                           },
-                           answers=results,
-                           achievement_messages=achievement_messages or [],
-                           student_id=student_id)
-
 @app.route("/achievements")
 @login_required
 def achievements():
@@ -959,10 +826,10 @@ def add_student():
 
     return redirect(url_for('teacher_students'))
 
-@app.route("/teacher/student/<int:student_id>/dashboard")
+@app.route("/teacher/student/<int:student_id>/dashboard", endpoint="teacher_student_dashboard")
 @login_required
 @teacher_required
-def student_dashboard(student_id):
+def teacher_student_dashboard(student_id):
     conn = get_db()
     cursor = conn.cursor()
 
@@ -973,28 +840,46 @@ def student_dashboard(student_id):
         flash("Ученик не найден", "error")
         return redirect(url_for("teacher_dashboard"))
 
-    # Преобразуем sqlite.Row в dict, если нужно
+    # Получаем тесты для этого ученика
+    cursor.execute("""
+        SELECT t.*, tr.id as result_id, tr.percentage 
+        FROM tests t 
+        LEFT JOIN test_results tr ON t.id = tr.test_id AND tr.student_id = ?
+        WHERE t.student_id = ? OR t.student_id IS NULL
+        ORDER BY t.created_date DESC
+    """, (student_id, student_id))
+
+    tests = cursor.fetchall()
+
+    # Получаем результаты тестов
+    cursor.execute("""
+        SELECT tr.*, t.title as test_title
+        FROM test_results tr
+        JOIN tests t ON tr.test_id = t.id
+        WHERE tr.student_id = ?
+        ORDER BY tr.completed_date DESC
+    """, (student_id,))
+
+    test_results = cursor.fetchall()
+
+    conn.close()
+
+    # Преобразуем в словарь для безопасного доступа
     student = dict(student)
 
-    # Преобразуем строку created_date в datetime, если она есть
-    created_date_str = student.get('created_date')
-    if created_date_str:
+    # Преобразуем строку даты в объект datetime для форматирования в шаблоне
+    if student.get('created_date'):
         try:
-            student['created_date'] = datetime.strptime(created_date_str, "%Y-%m-%d %H:%M:%S")
-        except Exception:
+            student['created_date'] = datetime.strptime(student['created_date'], "%Y-%m-%d %H:%M:%S")
+        except (ValueError, TypeError):
             student['created_date'] = None
     else:
         student['created_date'] = None
 
-    # Продолжайте подготовку данных и рендеринг шаблона
-    return render_template("student_dashboard.html", student=student)
-
-
-
-
-
-
-
+    return render_template("student_dashboard.html",
+                           student=student,
+                           tests=tests,
+                           test_results=test_results)
 
 @app.route("/teacher/students/delete/<int:student_id>", methods=['POST'])
 @login_required
@@ -1023,7 +908,6 @@ def delete_student(student_id):
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
-
 
 @app.route("/teacher/student/<int:student_id>")
 @login_required
@@ -1073,7 +957,6 @@ def student_details(student_id):
                            test_results=test_results,
                            student_achievements=student_achievements,
                            achievements=ACHIEVEMENTS)
-
 
 @app.route("/teacher/tests/add", methods=["GET", "POST"])
 @login_required
@@ -1134,8 +1017,7 @@ def add_test():
     # Для GET-запроса рендерим форму
     return render_template("add_test.html", form=form)
 
-
-@app.route("/teacher/student/<int:student_id>/create_test", methods=['GET', 'POST'])
+@app.route("/teacher/student/<int:student_id>/create_test", methods=['POST'])
 @login_required
 @teacher_required
 def create_test_for_student(student_id):
@@ -1146,64 +1028,357 @@ def create_test_for_student(student_id):
     cursor.execute("SELECT id FROM users WHERE id = ? AND role = 'student' AND teacher_id = ?",
                    (student_id, session['user_id']))
     student = cursor.fetchone()
+
     if not student:
         flash('Ученик не найден или не принадлежит вам', 'error')
-        return redirect(url_for('teacher_dashboard'))
+        return redirect(url_for('teacher_student_dashboard', student_id=student_id))
 
-    if request.method == 'POST':
-        try:
-            title = request.form.get('title', '').strip()
-            description = request.form.get('description', '').strip()
+    try:
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
 
-            # Собираем вопросы
-            questions = []
-            i = 1
-            while True:
-                question_text = request.form.get(f'question_{i}', '').strip()
-                answer = request.form.get(f'answer_{i}', '').strip()
+        # Собираем вопросы из формы
+        questions = []
+        i = 1
+        while True:
+            question_text = request.form.get(f'question_{i}', '').strip()
+            answer = request.form.get(f'answer_{i}', '').strip()
 
-                if not question_text and not answer:
-                    break
+            # Если оба поля пустые, значит вопросы закончились
+            if not question_text and not answer:
+                break
 
-                if question_text and answer:
-                    questions.append({
-                        'question': question_text,
-                        'answer': answer
-                    })
-                i += 1
-                if i > 20:
-                    break
+            if question_text and answer:
+                questions.append({
+                    'question': question_text,
+                    'answer': answer
+                })
+            i += 1
 
-            if not questions:
-                flash('Добавьте хотя бы один вопрос!', 'error')
-                return render_template('create_test.html', student_id=student_id)
+            # Защита от бесконечного цикла
+            if i > 20:
+                break
 
-            if not title:
-                flash('Введите название теста!', 'error')
-                return render_template('create_test.html', student_id=student_id)
+        if not questions:
+            flash('Добавьте хотя бы один вопрос!', 'error')
+            return redirect(url_for('teacher_student_dashboard', student_id=student_id))
 
-            # Сохраняем тест с student_id
-            cursor.execute(
-                "INSERT INTO tests (title, description, creator_id, questions, created_date, student_id) VALUES (?, ?, ?, ?, ?, ?)",
-                (title, description, session['user_id'], json.dumps(questions, ensure_ascii=False),
-                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"), student_id)
-            )
-            conn.commit()
-            conn.close()
+        if not title:
+            flash('Введите название теста!', 'error')
+            return redirect(url_for('teacher_student_dashboard', student_id=student_id))
 
-            flash('Тест для ученика успешно создан!', 'success')
-            return redirect(url_for('student_dashboard', student_id=student_id))
+        # Сохраняем тест с student_id
+        cursor.execute(
+            "INSERT INTO tests (title, description, creator_id, questions, created_date, student_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (title, description, session['user_id'], json.dumps(questions, ensure_ascii=False),
+             datetime.now().strftime("%Y-%m-%d %H:%M:%S"), student_id)
+        )
+        conn.commit()
+        conn.close()
 
-        except Exception as e:
-            flash('Произошла ошибка при создании теста', 'error')
-            print(f"Ошибка создания теста: {e}")
-            return render_template('create_test.html', student_id=student_id)
+        flash('Тест для ученика успешно создан!', 'success')
+        return redirect(url_for('teacher_student_dashboard', student_id=student_id))
+
+    except Exception as e:
+        flash('Произошла ошибка при создании теста', 'error')
+        print(f"Ошибка создания теста: {e}")
+        return redirect(url_for('teacher_student_dashboard', student_id=student_id))
+
+@app.route("/teacher/student/<int:student_id>/test/<int:test_id>/answer/<int:question_index>", methods=['POST'])
+@login_required
+@teacher_required
+def process_test_answer(student_id, test_id, question_index):
+    """Обработка ответа на вопрос теста"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Получаем тест
+    cursor.execute("SELECT * FROM tests WHERE id = ? AND student_id = ?", (test_id, student_id))
+    test = cursor.fetchone()
+    if not test:
+        flash('Тест не найден', 'error')
+        return redirect(url_for('teacher_student_dashboard', student_id=student_id))
+
+    questions = json.loads(test['questions']) if test['questions'] else []
+
+    # Сохраняем ответ в сессии
+    session_key = f'test_{test_id}_answers'
+    user_answers = session.get(session_key, [''] * len(questions))
+    user_answers[question_index] = request.form.get('answer', '').strip()
+    session[session_key] = user_answers
+
+    # Если это последний вопрос или нажата "Завершить"
+    if 'finish' in request.form or question_index >= len(questions) - 1:
+        return finish_test(test_id, student_id, questions, user_answers, cursor, conn)
+
+    # Переходим к следующему вопросу
+    next_question = question_index + 1
+    conn.close()
+    return redirect(url_for('take_test', test_id=test_id, student_id=student_id, question_index=next_question))
+
+def finish_test(test_id, student_id, questions, user_answers, cursor, conn):
+    """Завершение теста с сохранением результатов в test_results и обновлением звезд"""
+    # Рассчитываем правильные ответы
+    correct_answers = 0
+    total_questions = len(questions)
+    for i, q in enumerate(questions):
+        if i < len(user_answers) and user_answers[i].strip().lower() == q.get('answer', '').strip().lower():
+            correct_answers += 1
+
+    percentage = int((correct_answers / total_questions) * 100) if total_questions > 0 else 0
+    stars_earned = correct_answers  # 1 звезда за каждый правильный ответ (измените логику, если нужно)
+
+    # Сохраняем результаты в test_results
+    cursor.execute("""
+        INSERT INTO test_results (test_id, student_id, score, total_questions, percentage, stars_earned, answers, completed_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        test_id,
+        student_id,
+        correct_answers,
+        total_questions,
+        percentage,
+        stars_earned,
+        json.dumps(user_answers, ensure_ascii=False),
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
+    conn.commit()
+
+    # Обновляем статус теста (если есть столбец)
+    try:
+        cursor.execute("UPDATE tests SET status = 'completed' WHERE id = ? AND student_id = ?", (test_id, student_id))
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # Если столбца нет, игнорируем
+
+    # Обновляем звезды ученика
+    cursor.execute("SELECT stars FROM users WHERE id = ?", (student_id,))
+    current_stars = cursor.fetchone()['stars'] or 0
+    new_total_stars = current_stars + stars_earned
+    cursor.execute("UPDATE users SET stars = ? WHERE id = ?", (new_total_stars, student_id))
+    conn.commit()
+
+    # Проверяем достижения
+    messages = check_achievements(student_id, cursor)
+    for msg in messages:
+        flash(msg, 'success')
 
     conn.close()
-    return render_template('create_test.html', student_id=student_id)
+    flash(f'Тест завершен! Правильных ответов: {correct_answers}/{total_questions}. Вы заработали {stars_earned} звезд!', 'success')
+    return redirect(url_for('teacher_student_dashboard', student_id=student_id))
 
+@app.route("/student/dashboard", endpoint="student_dashboard")
+@login_required
+@student_required
+def student_dashboard():
+    """Главная страница ученика"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Получаем доступные тесты (общие или назначенные ученику)
+    cursor.execute("""
+        SELECT t.id, t.title, t.description, t.created_date, u.username as creator_name,
+               CASE WHEN tr.id IS NOT NULL THEN 1 ELSE 0 END as completed
+        FROM tests t
+        JOIN users u ON t.creator_id = u.id
+        LEFT JOIN test_results tr ON t.id = tr.test_id AND tr.student_id = ?
+        WHERE t.student_id = ? OR t.student_id IS NULL
+        ORDER BY t.created_date DESC
+    """, (session['user_id'], session['user_id']))
+
+    tests = cursor.fetchall()
+
+    # Получаем результаты ученика
+    cursor.execute("""
+            t.title as test_title
+            FROM test_results tr
+            JOIN tests t ON tr.test_id = t.id
+            WHERE tr.student_id = ?
+            ORDER BY tr.completed_date DESC
+        """, (session['user_id'],))
+    test_results = cursor.fetchall()
+
+    # Получаем достижения ученика
+    cursor.execute("""
+            SELECT achievement_id FROM student_achievements WHERE student_id = ?
+        """, (session['user_id'],))
+    student_achievements = [row['achievement_id'] for row in cursor.fetchall()]
+
+    # Получаем информацию о пользователе (звезды, ранг)
+    cursor.execute("SELECT stars, current_rank FROM users WHERE id = ?", (session['user_id'],))
+    user_info = cursor.fetchone()
+
+    conn.close()
+
+    return render_template("student_dashboard.html",
+                           tests=tests,
+                           test_results=test_results,
+                           student_achievements=student_achievements,
+                           achievements=ACHIEVEMENTS,
+                           user_info=user_info)
+
+
+@app.route("/student/test/<int:test_id>/take")
+@login_required
+# @student_required
+def take_test(test_id):
+    """Начало прохождения теста учеником"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM tests WHERE id = ?", (test_id,))
+    test = cursor.fetchone()
+    conn.close()
+
+    if not test:
+        flash("Тест не найден", "error")
+        return redirect(url_for("student_dashboard"))
+
+    questions = json.loads(test['questions']) if test['questions'] else []
+
+    # Начинаем с первого вопроса
+    return redirect(url_for('take_test_question', test_id=test_id, question_index=0))
+
+
+@app.route("/student/test/<int:test_id>/question/<int:question_index>", methods=['GET', 'POST'])
+@login_required
+def take_test_question(test_id, question_index):
+    """Отображение вопроса теста и обработка ответа"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM tests WHERE id = ?", (test_id,))
+    test = cursor.fetchone()
+
+    if not test:
+        flash("Тест не найден", "error")
+        if session.get('role') == 'student':
+            return redirect(url_for("student_dashboard"))
+        else:
+            return redirect(url_for("teacher_dashboard"))
+
+    # Получаем вопросы из JSON
+    questions = json.loads(test['questions']) if test['questions'] else []
+
+    if question_index < 0 or question_index >= len(questions):
+        flash("Неверный номер вопроса", "error")
+        if session.get('role') == 'student':
+            return redirect(url_for("student_dashboard"))
+        else:
+            return redirect(url_for("teacher_dashboard"))
+
+    # Инициализируем сессию для ответов
+    session_key = f'test_{test_id}_answers'
+    if session_key not in session:
+        session[session_key] = [''] * len(questions)
+
+    if request.method == 'POST':
+        # Сохраняем ответ в сессии
+        user_answers = session[session_key]
+        user_answers[question_index] = request.form.get('answer', '').strip()
+        session[session_key] = user_answers
+
+        # Если нажата кнопка "Завершить"
+        if 'finish' in request.form or question_index == len(questions) - 1:
+            # Завершить тест и сохранить результат
+            return finish_student_test(test_id, user_answers)
+
+        # Иначе переходим к следующему вопросу
+        return redirect(url_for('take_test_question', test_id=test_id, question_index=question_index + 1))
+
+    conn.close()
+
+    # Получаем текущий вопрос
+    current_question = questions[question_index] if question_index < len(questions) else None
+
+    return render_template("take_test_question.html",
+                           test=test,
+                           question=current_question,  # Передаем текущий вопрос
+                           question_index=question_index,
+                           total_questions=len(questions),
+                           user_answers=session.get(session_key, []),
+                           questions=questions)  # Добавляем все вопросы для отладки
+
+
+def finish_student_test(test_id, user_answers):
+    """Обработка завершения теста учеником или учителем"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM tests WHERE id = ?", (test_id,))
+    test = cursor.fetchone()
+
+    if not test:
+        flash("Тест не найден", "error")
+        return redirect(url_for("home"))
+
+    questions = json.loads(test['questions']) if test['questions'] else []
+
+    correct_answers = 0
+    total_questions = len(questions)
+
+    for i, q in enumerate(questions):
+        if i < len(user_answers) and user_answers[i].strip().lower() == q.get('answer', '').strip().lower():
+            correct_answers += 1
+
+    percentage = int((correct_answers / total_questions) * 100) if total_questions > 0 else 0
+    stars_earned = correct_answers
+
+    # Определяем ID пользователя и его роль
+    user_id = session['user_id']
+    user_role = session.get('role')
+
+    # Сохраняем результаты
+    cursor.execute("""
+        INSERT INTO test_results (test_id, student_id, score, total_questions, percentage, stars_earned, answers, completed_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        test_id,
+        user_id,
+        correct_answers,
+        total_questions,
+        percentage,
+        stars_earned,
+        json.dumps(user_answers, ensure_ascii=False),
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
+    conn.commit()
+
+    # Обновляем звезды только для учеников
+    if user_role == 'student':
+        cursor.execute("SELECT stars FROM users WHERE id = ?", (user_id,))
+        current_stars = cursor.fetchone()['stars'] or 0
+        new_stars = current_stars + stars_earned
+        cursor.execute("UPDATE users SET stars = ? WHERE id = ?", (new_stars, user_id))
+        conn.commit()
+
+        # Проверяем достижения только для учеников
+        messages = check_achievements(user_id, cursor)
+        for msg in messages:
+            flash(msg, 'success')
+
+    conn.close()
+
+    # Очищаем ответы из сессии
+    session_key = f'test_{test_id}_answers'
+    if session_key in session:
+        session.pop(session_key)
+
+    flash(
+        f"Тест завершен! Правильных ответов: {correct_answers}/{total_questions}. Вы заработали {stars_earned} звезд!",
+        "success")
+
+    # Перенаправляем в зависимости от роли
+    if user_role == 'student':
+        return redirect(url_for('student_dashboard'))
+    else:
+        # Для учителя возвращаем на страницу ученика, если тест был назначен конкретному ученику
+        # Или на dashboard учителя, если это общий тест
+        if 'student_id' in test and test['student_id']:
+            return redirect(url_for('teacher_student_dashboard', student_id=test['student_id']))
+        else:
+            return redirect(url_for('teacher_dashboard'))
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(debug=True)

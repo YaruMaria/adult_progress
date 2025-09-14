@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Стили аналогичны вашему student_dashboard.html для consistency */
         :root {
             --primary: #A5810A;
             --primary-dark: #7A833D;
@@ -193,33 +192,34 @@
         <!-- Прогресс -->
         <div class="card">
             <div class="progress">
-                <div class="progress-fill" style="width: {{ ((current_question + 1) / total_questions) * 100 }}%"></div>
+                <div class="progress-fill" style="width: {{ ((question_index + 1) / total_questions) * 100 }}%"></div>
             </div>
-            <p class="text-center">Вопрос {{ current_question + 1 }} из {{ total_questions }}</p>
+            <p class="text-center">Вопрос {{ question_index + 1 }} из {{ total_questions }}</p>
         </div>
 
         <!-- Вопрос -->
-        {% if questions %}
+        <!-- Вопрос -->
+        {% if question %}  <!-- Измените conditions на question -->
             <div class="card">
                 <div class="question">
-                    <div class="question-number">Вопрос {{ current_question + 1 }}</div>
-                    <div class="question-text">{{ questions[current_question].question }}</div>
+                    <div class="question-number">Вопрос {{ question_index + 1 }}</div>
+                    <div class="question-text">{{ question.question }}</div>
                 </div>
 
-                <form method="POST" action="{{ url_for('process_test_answer', test_id=test.id, student_id=session.user_id, question_index=current_question) }}">
+                <form method="POST" action="">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="mb-3">
                         <label class="form-label">Ваш ответ:</label>
-                        <input type="text" class="form-control" name="answer" value="{{ user_answers[current_question] }}" required placeholder="Введите ответ">
+                        <input type="text" class="form-control" name="answer" value="{{ user_answers[question_index] if user_answers and question_index < user_answers|length else '' }}" required placeholder="Введите ответ">
                     </div>
                     <div class="text-center">
-                        {% if current_question > 0 %}
-                            <a href="{{ url_for('take_test', test_id=test.id, student_id=student_id, question_index=current_question - 1) }}" class="btn btn-secondary">Назад</a>
+                        {% if question_index > 0 %}
+                            <a href="{{ url_for('take_test_question', test_id=test.id, question_index=question_index-1) }}" class="btn btn-secondary">Назад</a>
                         {% endif %}
-                        {% if current_question < total_questions - 1 %}
+                        {% if question_index < total_questions - 1 %}
                             <button type="submit" class="btn btn-primary">Далее</button>
                         {% else %}
-                            <button type="submit" name="finish" class="btn btn-primary">Завершить тест</button>
+                            <button type="submit" name="finish" value="true" class="btn btn-primary">Завершить тест</button>
                         {% endif %}
                     </div>
                 </form>
@@ -227,7 +227,12 @@
         {% else %}
             <div class="card">
                 <p class="text-center">В тесте нет вопросов.</p>
-                <a href="{{ url_for('student_dashboard', student_id=student_id) }}" class="btn btn-primary">Вернуться</a>
+                <p class="text-center">Всего вопросов в тесте: {{ total_questions }}</p>  <!-- Добавлено для отладки -->
+                {% if session.get('role') == 'student' %}
+                    <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary">Вернуться</a>
+                {% else %}
+                    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-primary">Вернуться</a>
+                {% endif %}
             </div>
         {% endif %}
     </div>
