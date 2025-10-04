@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card p-5 animate-fade-in">
+        <!-- Результаты теста -->
+        <div class="text-center mb-5">
+            <div class="result-badge mb-4">
+                {% set percentage = (result.score / result.total * 100)|round %}
+                <div class="score-circle {% if percentage >= 80 %}score-excellent{% elif percentage >= 60 %}score-good{% else %}score-poor{% endif %}">
+                    <span class="score-number">{{ result.score }}/{{ result.total }}</span>
+                    <span class="score-percentage">{{ percentage }}%</span>
+                </div>
+            </div>
+            
+            <h1 class="text-gradient mb-2">{{ result.test.title }}</h1>
+            <p class="text-muted mb-3">
+                <i class="fas fa-calendar me-1"></i>
+                {{ result.completed_at.strftime('%d.%m.%Y в %H:%M') }}
+            </p>
+            
+            {% if percentage >= 80 %}
+            <div class="alert alert-success">
+                <i class="fas fa-trophy me-2"></i>
+                <strong>Отличный результат!</strong> Продолжайте в том же духе!
+            </div>
+            {% elif percentage >= 60 %}
+            <div class="alert alert-info">
+                <i class="fas fa-thumbs-up me-2"></i>
+                <strong>Хороший результат!</strong> Есть куда стремиться!
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-lightbulb me-2"></i>
+                <strong>Нужно повторить материал.</strong> Обратите внимание на ошибки.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Детализация ответов -->
+        <div class="answers-detailed">
+            <h3 class="text-gradient mb-4">Детализация ответов</h3>
+            
+            {% for q_id, ans in answers.items() %}
+            {% set question = result.test.questions | selectattr('id', 'equalto', q_id|int) | first %}
+            <div class="answer-card glass-card p-4 mb-3 {% if ans.is_correct %}answer-correct{% else %}answer-incorrect{% endif %}">
+                <div class="d-flex align-items-start mb-3">
+                    <div class="answer-status me-3">
+                        {% if ans.is_correct %}
+                        <i class="fas fa-check-circle text-success fa-2x"></i>
+                        {% else %}
+                        <i class="fas fa-times-circle text-danger fa-2x"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="mb-2">Вопрос {{ loop.index }}</h5>
+                        <p class="question-text mb-3">{{ question.text }}</p>
+                        
+                        {% if question.image_path %}
+                        <div class="question-image mb-3">
+                            <img src="{{ url_for('uploaded_file', filename=question.image_path) }}" 
+                                 alt="Изображение вопроса" 
+                                 class="img-fluid rounded-2" style="max-height: 200px;">
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="answer-item {% if not ans.is_correct %}bg-light-danger{% endif %}">
+                            <strong class="text-muted">Ваш ответ:</strong>
+                            <p class="mb-0">{{ ans.user or '<не указан>' }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="answer-item {% if not ans.is_correct %}bg-light-success{% endif %}">
+                            <strong class="text-muted">Правильный ответ:</strong>
+                            <p class="mb-0 text-success">{{ ans.correct }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="text-center mt-5">
+            <a href="{{ url_for('student_profile', student_id=result.test.student_id) }}" 
+               class="btn btn-gradient me-3">
+                <i class="fas fa-arrow-left me-2"></i>Назад к профилю
+            </a>
+            <a href="{{ url_for('student_results', student_id=result.test.student_id) }}" 
+               class="btn btn-outline-primary">
+                <i class="fas fa-history me-2"></i>Все результаты
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.score-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    border: 5px solid;
+    font-weight: 700;
+}
+
+.score-excellent {
+    background: linear-gradient(135deg, #4fd1c5, #38b2ac);
+    border-color: #2c9c94;
+    color: white;
+}
+
+.score-good {
+    background: linear-gradient(135deg, #f6ad55, #ed8936);
+    border-color: #d97706;
+    color: white;
+}
+
+.score-poor {
+    background: linear-gradient(135deg, #fc8181, #f56565);
+    border-color: #e53e3e;
+    color: white;
+}
+
+.score-number {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.score-percentage {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.answer-correct {
+    border-left: 4px solid #2ecc71;
+}
+
+.answer-incorrect {
+    border-left: 4px solid #e74c3c;
+}
+
+.answer-item {
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.bg-light-danger {
+    background: rgba(231, 76, 60, 0.1);
+}
+
+.bg-light-success {
+    background: rgba(46, 204, 113, 0.1);
+}
+
+.question-text {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: var(--dark);
+}
+
+.answer-status {
+    flex-shrink: 0;
+}
+
+.answer-card {
+    transition: transform 0.2s ease;
+}
+
+.answer-card:hover {
+    transform: translateY(-2px);
+}
+
+.alert {
+    border-radius: 15px;
+    border: none;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .score-circle {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .score-number {
+        font-size: 1.5rem;
+    }
+    
+    .row {
+        flex-direction: column;
+    }
+    
+    .col-md-6 {
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>История результатов {{ student.full_name }}</h1>
+    <ul>
+        {% for result in results %}
+        <li>
+            {{ result.test.title }} - {{ result.completed_at }} - {{ result.score }}/{{ result.total }}
+            <a href="{{ url_for('test_result', result_id=result.id) }}">Подробно</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

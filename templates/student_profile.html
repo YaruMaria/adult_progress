@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль ученика - {{ student.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ student.full_name }}</h1>
+    <p>Звёзды: {{ student.stars }}</p>
+    <a href="{{ url_for('add_test', student_id=student.id) }}" class="btn btn-primary">Создать тест</a>
+    <h2>Тесты</h2>
+    <ul>
+        {% for test in student.tests %}
+        <li>
+            {{ test.title }}
+            <a href="{{ url_for('take_test', test_id=test.id) }}">Пройти</a>
+            <a href="{{ url_for('add_questions', test_id=test.id) }}">Добавить вопросы</a>
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('student_results', student_id=student.id) }}">История результатов</a>
+</div>
+{% endblock %}

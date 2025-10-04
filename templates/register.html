@@ -2,335 +2,149 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация - EduProgress</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans&display=swap" rel="stylesheet">
+    <title>Регистрация</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #A5810A;
-            --primary-dark: #7A833D;
-            --secondary: #4C4F3F;
-            --light: #FAF7EA;
-            --lighter: #EBE8D2;
-            --dark: #4C4F3F;
-            --darker: #3E3A09;
-            --success: #7A833D;
-            --danger: #8B4513;
-            --warning: #C7AE2B;
-            --gray: #7C7C53;
-            --gray-light: #E7E7D9;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            background-image: url('https://i.pinimg.com/1200x/94/86/c9/9486c96860a224d02a528a949416adf9.jpg');
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            color: var(--dark);
-            line-height: 1.5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            position: relative;
-            font-size: 0.9rem;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top:0; left:0; right:0; bottom:0;
-            background: rgba(60, 62, 38, 0.58);
-            pointer-events: none;
-            z-index: -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1.5rem;
-            position: relative;
-        }
-
-        /* Карточка регистрации */
-        .register-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 2rem;
-        }
-
-        .register-card {
-            background: rgba(250, 247, 234, 0.95);
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
-            padding: 2.5rem;
-            box-shadow: 0 10px 30px rgba(72, 77, 55, 0.15);
-            border: 1px solid rgba(224, 231, 255, 0.3);
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 500px;
-            position: relative;
-            overflow: hidden;
+            max-width: 400px;
         }
 
-        .register-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 5px;
-            height: 100%;
-            background: linear-gradient(to bottom, var(--primary), var(--primary-dark));
-        }
-
-        .nav-brand {
-            font-family: 'Fredoka One', cursive;
-            font-size: 2.2rem;
-            color: var(--darker);
+        h1 {
             text-align: center;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Формы */
-        .form-label {
+            color: #333;
+            margin-bottom: 30px;
             font-weight: 600;
-            color: var(--darker);
-            margin-bottom: 0.5rem;
-            display: block;
         }
 
-        .form-control {
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="password"] {
             width: 100%;
-            padding: 0.9rem 1.2rem;
-            border: 1px solid var(--lighter);
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.8);
-            color: var(--dark);
-            font-size: 1rem;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
             transition: all 0.3s ease;
         }
 
-        .form-control:focus {
+        input[type="text"]:focus,
+        input[type="password"]:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(165, 129, 10, 0.2);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        /* Кнопки */
-        .btn-gradient {
-            background: linear-gradient(135deg, var(--primary), var(--warning));
-            color: var(--darker);
-            border: none;
-            border-radius: 12px;
-            padding: 1rem;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: block;
+        button {
             width: 100%;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(199, 174, 43, 0.4);
-        }
-
-        .btn-gradient:hover {
-            background: linear-gradient(135deg, var(--warning), var(--primary));
-            box-shadow: 0 6px 20px rgba(199, 174, 43, 0.6);
-            transform: translateY(-2px);
-        }
-
-        /* Кнопки выбора роли */
-        .role-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .role-btn {
-            flex: 1;
-            padding: 1rem;
-            border: 2px solid var(--lighter);
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.5);
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        p {
             text-align: center;
+            margin-top: 20px;
+            color: #666;
         }
 
-        .role-btn:hover {
-            border-color: var(--primary);
-            background: rgba(165, 129, 10, 0.1);
+        a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
         }
 
-        .role-btn.active {
-            border-color: var(--primary);
-            background: rgba(165, 129, 10, 0.2);
-            box-shadow: 0 0 0 2px rgba(165, 129, 10, 0.3);
-        }
-
-        .role-btn i {
-            display: block;
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        /* Сетка */
-        .form-row {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .form-col {
-            flex: 1;
-        }
-
-        /* Текст */
-        .text-muted {
-            color: var(--gray) !important;
-        }
-
-        .text-gradient {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            font-weight: 600;
-        }
-
-        /* Анимации */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-fade-in {
-            animation: fadeIn 0.6s ease forwards;
-        }
-
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            .register-container {
-                padding: 1rem;
-            }
-            
-            .register-card {
-                padding: 2rem 1.5rem;
-            }
-            
-            .nav-brand {
-                font-size: 1.8rem;
-            }
-            
-            .form-row {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .role-buttons {
-                flex-direction: column;
-            }
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <div class="register-container">
-        <div class="register-card animate-fade-in">
-            <div class="text-center mb-5">
-                <div class="nav-brand">
-                    <i class="fas fa-user-plus"></i> Регистрация
-                </div>
-                <p class="text-muted">Создайте новый аккаунт для начала обучения</p>
+    <div class="container">
+        <h1>Регистрация учителя</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <div class="form-group">
+                <label for="username">Логин:</label>
+                <input type="text" id="username" name="username" required>
             </div>
-
-            <form method="POST" action="{{ url_for('register') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <div class="mb-4">
-                    <label class="form-label">
-                        <i class="fas fa-at me-2" style="color: var(--primary);"></i>Логин
-                    </label>
-                    <input type="text" class="form-control" name="username"
-                           placeholder="Придумайте уникальный логин" required minlength="3">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-col">
-                        <label class="form-label">
-                            <i class="fas fa-key me-2" style="color: var(--primary);"></i>Пароль
-                        </label>
-                        <input type="password" class="form-control" name="password"
-                               placeholder="Не менее 6 символов" required minlength="6">
-                    </div>
-                    <div class="form-col">
-                        <label class="form-label">
-                            <i class="fas fa-check-circle me-2" style="color: var(--primary);"></i>Подтверждение
-                        </label>
-                        <input type="password" class="form-control" name="confirm_password"
-                               placeholder="Повторите пароль" required>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label">
-                        <i class="fas fa-user-tag me-2" style="color: var(--primary);"></i>Выберите роль
-                    </label>
-                    <div class="role-buttons">
-                        <div class="role-btn active" data-role="student">
-                            <i class="fas fa-user-graduate"></i>
-                            <span>Ученик</span>
-                            <input type="radio" name="role" value="student" checked hidden>
-                        </div>
-                        <div class="role-btn" data-role="teacher">
-                            <i class="fas fa-chalkboard-teacher"></i>
-                            <span>Учитель</span>
-                            <input type="radio" name="role" value="teacher" hidden>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-gradient mt-2">
-                    <i class="fas fa-rocket me-2"></i>Начать обучение
-                </button>
-            </form>
-
-            <div class="text-center mt-4 pt-3 border-top">
-                <p class="text-muted mb-0">
-                    Уже есть аккаунт?
-                    <a href="{{ url_for('login') }}" class="text-gradient text-decoration-none">
-                        Войти в систему
-                    </a>
-                </p>
+            <div class="form-group">
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" name="password" required>
             </div>
-        </div>
+            <div class="form-group">
+                <label for="confirm_password">Подтвердите пароль:</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+            </div>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        <p>Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a></p>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const roleButtons = document.querySelectorAll('.role-btn');
-            
-            roleButtons.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // Убираем активный класс у всех кнопок
-                    roleButtons.forEach(b => b.classList.remove('active'));
-                    
-                    // Добавляем активный класс к текущей кнопке
-                    this.classList.add('active');
-                    
-                    // Устанавливаем значение выбранной роли
-                    const role = this.getAttribute('data-role');
-                    document.querySelectorAll('input[name="role"]').forEach(input => {
-                        input.checked = (input.value === role);
-                    });
-                });
-            });
-        });
-    </script>
 </body>
 </html>

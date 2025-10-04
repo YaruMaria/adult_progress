@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="glass-card p-5 animate-fade-in">
+        <!-- Заголовок теста -->
+        <div class="text-center mb-5">
+            <h1 class="text-gradient mb-2">{{ test.title }}</h1>
+            <p class="text-muted">Ответьте на все вопросы ниже</p>
+            <div class="progress-info mb-3">
+                <small>Всего вопросов: {{ questions|length }}</small>
+            </div>
+        </div>
+
+        <form method="POST" class="test-form">
+            {% for question in questions %}
+            <div class="question-card glass-card p-4 mb-4 animate-fade-in"
+                 style="animation-delay: {{ loop.index * 0.1 }}s;">
+
+                <!-- Номер вопроса и прогресс -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="question-badge">Вопрос {{ loop.index }} из {{ questions|length }}</span>
+                    <div class="progress" style="width: 100px; height: 6px;">
+                        <div class="progress-bar" style="width: {{ (loop.index / questions|length * 100) }}%"></div>
+                    </div>
+                </div>
+
+                <!-- Текст вопроса -->
+                <div class="question-content mb-4">
+                    <p class="question-text">{{ question.text }}</p>
+
+                    <!-- Изображение вопроса -->
+                    {% if question.image_path %}
+                    <div class="question-image-container text-center mb-3">
+                        <img src="{{ url_for('uploaded_file', filename=question.image_path) }}"
+                             alt="Изображение для вопроса"
+                             class="question-image img-fluid rounded-3 shadow"
+                             onerror="this.style.display='none'; console.log('Image failed to load: {{ question.image_path }}')">
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-image me-1"></i>Изображение к вопросу
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Поле для ответа -->
+                <div class="answer-section">
+                    <label for="answer_{{ question.id }}" class="form-label fw-semibold mb-2">
+                        Ваш ответ:
+                    </label>
+                    <input type="text"
+                           id="answer_{{ question.id }}"
+                           name="answer_{{ question.id }}"
+                           class="form-control answer-input"
+                           placeholder="Введите ваш ответ..."
+                           required
+                           autocomplete="off">
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Кнопка отправки -->
+            <div class="text-center mt-5">
+                <button type="submit" class="btn btn-gradient btn-lg px-5">
+                    <i class="fas fa-paper-plane me-2"></i>Завершить тест
+                </button>
+                <p class="text-muted mt-2">Проверьте ответы перед отправкой</p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* ... (стили остаются такими же как в предыдущей версии) ... */
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Автофокус на первое поле ввода
+    const firstInput = document.querySelector('.answer-input');
+    if (firstInput) {
+        firstInput.focus();
+    }
+
+    // Подсветка активного поля ввода
+    const inputs = document.querySelectorAll('.answer-input');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            const questionCard = this.closest('.question-card');
+            questionCard.style.borderLeftColor = 'var(--primary-light)';
+            questionCard.style.background = 'rgba(255, 255, 255, 0.95)';
+        });
+
+        input.addEventListener('blur', function() {
+            const questionCard = this.closest('.question-card');
+            questionCard.style.borderLeftColor = 'var(--primary)';
+            questionCard.style.background = '';
+        });
+    });
+
+    // Плавная прокрутка между вопросами
+    inputs.forEach((input, index) => {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const nextInput = inputs[index + 1];
+                if (nextInput) {
+                    nextInput.focus();
+                    nextInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    // Если это последний вопрос, прокрутить к кнопке отправки
+                    const submitBtn = document.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }
+        });
+    });
+
+    // Проверка загрузки изображений
+    const images = document.querySelectorAll('.question-image');
+    images.forEach(img => {
+        img.addEventListener('error', function() {
+            console.log('Image failed to load:', this.src);
+            this.style.display = 'none';
+            const container = this.closest('.question-image-container');
+            if (container) {
+                const message = container.querySelector('small');
+                if (message) {
+                    message.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Изображение не загружено';
+                    message.className = 'text-danger';
+                }
+            }
+        });
+
+        img.addEventListener('load', function() {
+            console.log('Image loaded successfully:', this.src);
+        });
+    });
+});
+</script>
+{% endblock %}

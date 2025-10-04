@@ -48,7 +48,7 @@
                     <div class="student-stars" aria-label="Звёзды ученика">
                         <i class="fas fa-star" aria-hidden="true"></i> {{ student.stars }}
                     </div>
-                    <a href="{{ url_for('student_dashboard', student_id=student.id) }}" class="btn btn-outline" aria-label="Профиль ученика {{ student.full_name }}">Профиль</a>
+                    <a href="{{ url_for('student_profile', student_id=student.id) }}">Профиль</a>
                 </li>
                 {% endfor %}
             </ul>
@@ -65,7 +65,7 @@
         <section class="card stats-card" aria-label="Статистика учителя">
             <h2 class="section-title">Статистика</h2>
             <ul class="stats-list">
-                <li><span class="stat-number">{{ total_students }}</span> Всего учеников</li>
+                <li><span class="stat-number">{{ students|length }}</span> Всего учеников</li>
                 <li><span class="stat-number">{{ total_stars }}</span> Всего звёзд</li>
                 <li><span class="stat-number">{{ test_count }}</span> Создано тестов</li>
                 <li><span class="stat-number">{{ completed_tests }}</span> Пройдено тестов</li>
@@ -76,14 +76,14 @@
         <section class="card actions-card" aria-label="Быстрые действия учителя">
             <h2 class="section-title">Быстрые действия</h2>
             <nav class="actions-nav" aria-label="Навигация быстрых действий">
-                <a href="{{ url_for('create_test') }}" class="action-btn" aria-label="Создать тест">
-                    <i class="fas fa-plus-circle" aria-hidden="true"></i> Создать тест
+                <a href="{{ url_for('teacher_students') }}" class="action-btn" aria-label="Управление учениками">
+                    <i class="fas fa-users" aria-hidden="true"></i> Ученики
                 </a>
-                <a href="{{ url_for('tests_list') }}" class="action-btn" aria-label="Все тесты">
+                <a href="{{ url_for('teacher_students') }}" class="action-btn" aria-label="Все тесты">
                     <i class="fas fa-list" aria-hidden="true"></i> Все тесты
                 </a>
-                <a href="{{ url_for('achievements') }}" class="action-btn" aria-label="Достижения">
-                    <i class="fas fa-trophy" aria-hidden="true"></i> Достижения
+                <a href="{{ url_for('logout') }}" class="action-btn logout-btn" aria-label="Выйти из системы">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Выйти
                 </a>
             </nav>
         </section>
@@ -130,14 +130,12 @@ body::before {
     box-shadow: 0 16px 40px rgba(72, 77, 55, 0.5);
 }
 
-
-
 /* Хедер */
 .header {
-    background: rgba(235, 232, 210, 0.95) !important; /* Золотисто-бежевый фон */
-    color: #4C4F3F !important; /* Темно-зеленый текст */
+    background: rgba(235, 232, 210, 0.95) !important;
+    color: #4C4F3F !important;
     padding: 2rem 0;
-    box-shadow: 0 4px 15px rgba(72, 77, 55, 0.6) !important; /* Зеленая тень */
+    box-shadow: 0 4px 15px rgba(72, 77, 55, 0.6) !important;
     border-radius: 28px 28px 0 0;
     margin-bottom: 3rem;
     position: relative;
@@ -145,8 +143,6 @@ body::before {
     display: flex;
     justify-content: center;
 }
-
-
 
 .container.header-container {
     width: 90%;
@@ -180,7 +176,7 @@ body::before {
 }
 
 .welcome-text h1 {
-    color: var(--darker) !important;
+    color: #4C4F3F !important;
     font-family: 'Fredoka One', cursive;
     font-weight: 700;
     font-size: 2.5rem;
@@ -208,6 +204,9 @@ body::before {
     align-items: center;
     gap: 0.5rem;
     user-select: none;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
 }
 
 .btn-primary:hover,
@@ -216,35 +215,6 @@ body::before {
     color: #2D2906;
     box-shadow: 0 8px 24px rgba(199, 174, 43, 1);
     outline: none;
-}
-
-.btn-primary:focus-visible {
-    outline: 3px solid #C7AE2B;
-    outline-offset: 3px;
-}
-
-.btn-outline {
-    background: transparent;
-    border: 2px solid #55572F;
-    color: #55572F;
-    border-radius: 25px;
-    padding: 0.5rem 1.25rem;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: background 0.25s ease, color 0.25s ease;
-    user-select: none;
-}
-
-.btn-outline:hover,
-.btn-outline:focus {
-    background: #55572F;
-    color: white;
-    outline: none;
-}
-
-.btn-outline:focus-visible {
-    outline: 3px solid #947F0C;
-    outline-offset: 3px;
 }
 
 /* Основной грид */
@@ -355,6 +325,7 @@ body::before {
     margin-left: auto;
     user-select: none;
 }
+
 .student-stars i {
     color: #967E08;
 }
@@ -366,6 +337,7 @@ body::before {
     padding: 3rem 1rem;
     user-select: none;
 }
+
 .empty-icon {
     color: #947F0C;
     font-size: 4rem;
@@ -428,6 +400,7 @@ body::before {
     gap: 0.6rem;
     transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
     user-select: none;
+    text-decoration: none;
 }
 
 .action-btn:hover,
@@ -436,64 +409,6 @@ body::before {
     color: #3C3601;
     box-shadow: 0 10px 30px rgba(199,174,43,0.9);
     outline: none;
-}
-
-.action-btn:focus-visible {
-    outline: 3px solid #947F0C;
-    outline-offset: 3px;
-}
-
-/* Скроллбар для списка учеников */
-.students-list::-webkit-scrollbar {
-    width: 8px;
-}
-.students-list::-webkit-scrollbar-track {
-    background: rgba(239, 234, 213, 0.7);
-    border-radius: 10px;
-}
-.students-list::-webkit-scrollbar-thumb {
-    background: #957F11;
-    border-radius: 10px;
-}
-.students-list::-webkit-scrollbar-thumb:hover {
-                    </a>
-                <a href="{{ url_for('profile') }}" class="action-btn" aria-label="Мой профиль">
-                    <i class="fas fa-user" aria-hidden="true"></i> Мой профиль
-                </a>
-                <a href="{{ url_for('logout') }}" class="action-btn logout-btn" aria-label="Выйти из системы">
-                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Выйти
-                </a>
-            </nav>
-        </section>
-
-    </main>
-
-    <!-- Футер -->
-    <footer class="footer" role="contentinfo">
-        <div class="container">
-            <p>&copy; 2024 Progress. Все права защищены.</p>
-            <p>Сделано с <i class="fas fa-heart" style="color: #e74c3c;" aria-hidden="true"></i> для образования</p>
-        </div>
-    </footer>
-
-</div>
-
-<style>
-/* Дополнительные стили для завершения дизайна */
-
-/* Стили для футера */
-.footer {
-    background: rgba(72, 77, 55, 0.9);
-    color: #E6E8D7;
-    text-align: center;
-    padding: 2rem 0;
-    margin-top: 3rem;
-    border-radius: 28px 28px 0 0;
-}
-
-.footer p {
-    margin: 0.5rem 0;
-    font-size: 1rem;
 }
 
 /* Стили для кнопки выхода */
@@ -506,6 +421,25 @@ body::before {
 .logout-btn:focus {
     background: #A0522D !important;
     box-shadow: 0 10px 30px rgba(160, 82, 45, 0.9) !important;
+}
+
+/* Скроллбар для списка учеников */
+.students-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.students-list::-webkit-scrollbar-track {
+    background: rgba(239, 234, 213, 0.7);
+    border-radius: 10px;
+}
+
+.students-list::-webkit-scrollbar-thumb {
+    background: #957F11;
+    border-radius: 10px;
+}
+
+.students-list::-webkit-scrollbar-thumb:hover {
+    background: #7A6510;
 }
 
 /* Адаптивность для мобильных устройств */
@@ -568,67 +502,9 @@ body::before {
 .students-card { animation-delay: 0.1s; }
 .stats-card { animation-delay: 0.2s; }
 .actions-card { animation-delay: 0.3s; }
-
-/* Улучшенная доступность для фокуса */
-.btn:focus-visible,
-.action-btn:focus-visible,
-.student-item:focus-visible {
-    outline: 3px solid #947F0C;
-    outline-offset: 2px;
-}
-
-/* Темная тема поддержка */
-@media (prefers-color-scheme: dark) {
-    .teacher-dashboard,
-    .card {
-        background: rgba(40, 40, 30, 0.95);
-        color: #E6E8D7;
-    }
-
-    .header {
-        background: rgba(50, 50, 40, 0.95);
-    }
-
-    .student-item {
-        background: rgba(60, 60, 45, 0.9);
-        color: #E6E8D7;
-    }
-
-    .stats-list li {
-        background: rgba(55, 55, 40, 0.9);
-        color: #E6E8D7;
-    }
-}
-
-/* Плавные переходы для всех интерактивных элементов */
-.btn,
-.action-btn,
-.student-item,
-.stats-list li {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Улучшенная читаемость для длинных списков */
-.students-list {
-    scrollbar-width: thin;
-    scrollbar-color: #957F11 rgba(239, 234, 213, 0.7);
-}
-
-/* Поддержка reduced-motion */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
 </style>
 
-<!-- Подключение Font Awesome для иконок -->
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-
 <script>
-// Небольшой JavaScript для улучшения UX
 document.addEventListener('DOMContentLoaded', function() {
     // Плавная прокрутка для якорных ссылок
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -649,27 +525,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (mainContent) {
         mainContent.setAttribute('aria-live', 'polite');
     }
-
-    // Улучшение доступности для карточек учеников
-    document.querySelectorAll('.student-item').forEach(item => {
-        item.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                const link = this.querySelector('a');
-                if (link) {
-                    link.click();
-                }
-            }
-        });
-    });
 });
-
-// Функция для обновления данных в реальном времени (заглушка)
-function updateLiveData() {
-    // Здесь может быть реализация WebSocket или Polling
-    console.log('Обновление данных...');
-}
-
-// Запускаем обновление каждые 30 секунд
-setInterval(updateLiveData, 30000);
 </script>
 {% endblock %}
